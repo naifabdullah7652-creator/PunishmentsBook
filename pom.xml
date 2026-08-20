@@ -21,47 +21,46 @@
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
-    <!-- Spigot 1.8.8 -->
     <repositories>
 
+        <!-- Spigot snapshots -->
         <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+
+        <!-- Sonatype snapshots -->
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
 
     </repositories>
 
     <dependencies>
 
-        <!-- Spigot API 1.8.8 -->
+        <!--
+            IMPORTANT:
+            spigot-api does NOT contain NMS/CraftBukkit.
+            We need the full Spigot 1.8.8 artifact for:
+            net.minecraft.server.v1_8_R3
+            org.bukkit.craftbukkit.v1_8_R3
+        -->
         <dependency>
             <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
+            <artifactId>spigot</artifactId>
             <version>1.8.8-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
-
-            <exclusions>
-
-                <!-- Fix missing BungeeCord Chat 1.8-SNAPSHOT -->
-                <exclusion>
-                    <groupId>net.md-5</groupId>
-                    <artifactId>bungeecord-chat</artifactId>
-                </exclusion>
-
-            </exclusions>
-
         </dependency>
 
     </dependencies>
 
     <build>
 
-        <!-- Output name -->
         <finalName>PunishmentsBook-2.0.0</finalName>
 
         <plugins>
 
-            <!-- Java 8 compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -72,27 +71,20 @@
                     <target>8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
-
             </plugin>
 
-            <!-- Create JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.5.0</version>
 
                 <configuration>
-
                     <archive>
-
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
-
                     </archive>
-
                 </configuration>
-
             </plugin>
 
         </plugins>
