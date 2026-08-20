@@ -4,30 +4,44 @@ settings:
 
 punishments:
 
-  hacking:
+  1:
     name: "Hacking"
-    command: "jail %player% 3d Hacking"
+    time: "3d"
+    reason: "Fly/KillAura/Reach"
+    command: "jail %player% %time% %reason%"
 
-  spamming:
+  2:
     name: "Spamming"
-    command: "mute %player% 3h Spamming"
+    time: "3h"
+    reason: "Spamming"
+    command: "mute %player% %time% %reason%"
 
-  swearing:
+  3:
     name: "Swearing"
-    command: "mute %player% 7h Swearing"
+    time: "7h"
+    reason: "Swearing"
+    command: "mute %player% %time% %reason%"
 
-  disrespect:
+  4:
     name: "Disrespect"
-    command: "mute %player% 4h Disrespect"
+    time: "4h"
+    reason: "Disrespect"
+    command: "mute %player% %time% %reason%"
 
-  advertising:
+  5:
     name: "Advertising"
-    command: "mute %player% 14d Advertising"
+    time: "14d"
+    reason: "Advertising"
+    command: "mute %player% %time% %reason%"
 
-  voice:
-    name: "Voice Changer"
-    command: "ban %player% 4d Voice Changer"
+  6:
+    name: "Voice"
+    time: "4d"
+    reason: "Changer/abuse/resonance"
+    command: "ban %player% %time% %reason%"
 
-  flooding:
+  7:
     name: "Flooding"
-    command: "banip %player% 18d Flooding"
+    time: "18d"
+    reason: "Bot/Ddos/Crashing"
+    command: "ban-ip %player% %time% %reason%"
