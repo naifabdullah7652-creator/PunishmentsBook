@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -17,12 +18,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
-
-      - name: Show POM
-        run: cat pom.xml
-
-      - name: Check dependencies
-        run: mvn dependency:tree -Dverbose
 
       - name: Build
         run: mvn -U -B clean package -Dfile.encoding=UTF-8
