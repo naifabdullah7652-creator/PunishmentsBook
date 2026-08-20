@@ -2,7 +2,7 @@ name: PunishmentsBook
 version: 2.0.0
 main: com.flynexx.punishments.PunishmentsBook
 author: FlyNeXx
-description: Clickable punishment book for Spigot 1.8.8
+description: Interactive Punishments Book for Spigot 1.8.8
 
 commands:
   pm:
@@ -11,9 +11,8 @@ commands:
     permission: punishmentsbook.use
 
   pmapply:
-    description: Executes a punishment
+    description: Internal punishment command
     usage: /pmapply <player> <punishment>
-    permission: punishmentsbook.use
 
 permissions:
   punishmentsbook.use:
