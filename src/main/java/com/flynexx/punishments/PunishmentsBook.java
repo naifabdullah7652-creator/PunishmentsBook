@@ -9,6 +9,7 @@ import net.minecraft.server.v1_8_R3.NBTTagString;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.ban.BanList;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -64,11 +65,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             getCommand("pmrevoke").setExecutor(this);
         }
 
-        Bukkit.getPluginManager().registerEvents(
-                this,
-                this
-        );
+        Bukkit.getPluginManager().registerEvents(this, this);
 
+        /*
+         * Check expired punishments every second.
+         */
         Bukkit.getScheduler().runTaskTimer(
                 this,
                 new Runnable() {
@@ -112,21 +113,26 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             Player staff = (Player) sender;
 
-            if (!staff.hasPermission("punishmentsbook.use")) {
+            if (!staff.hasPermission(
+                    "punishmentsbook.use")) {
+
                 staff.sendMessage(
                         message(
                                 "messages.errors.no-permission"
                         )
                 );
+
                 return true;
             }
 
             if (args.length != 1) {
+
                 staff.sendMessage(
                         prefix + color(
                                 "&cUsage: /pm <player>"
                         )
                 );
+
                 return true;
             }
 
@@ -173,9 +179,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (command.getName().equalsIgnoreCase("pmrevoke")) {
 
             if (!(sender instanceof Player)) {
+
                 sender.sendMessage(
                         prefix + color("&cPlayers only.")
                 );
+
                 return true;
             }
 
@@ -216,7 +224,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
     }
 
     /*
-     * Opens the Minecraft 1.8.8 written book.
+     * Open virtual written book.
      */
     private void openBook(
             Player player,
@@ -228,17 +236,12 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     createBook(target);
 
             org.bukkit.inventory.ItemStack bukkitBook =
-                    CraftItemStack.asBukkitCopy(
-                            book
-                    );
+                    CraftItemStack.asBukkitCopy(book);
 
             final org.bukkit.inventory.ItemStack oldItem =
                     player.getItemInHand();
 
-            player.setItemInHand(
-                    bukkitBook
-            );
-
+            player.setItemInHand(bukkitBook);
             player.updateInventory();
 
             EntityPlayer entityPlayer =
@@ -252,10 +255,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         @Override
                         public void run() {
 
-                            player.setItemInHand(
-                                    oldItem
-                            );
-
+                            player.setItemInHand(oldItem);
                             player.updateInventory();
                         }
                     },
@@ -283,8 +283,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
     /*
      * Creates the interactive book.
      *
-     * Only punishment names are visible.
-     * Duration/details are NOT displayed in the book.
+     * The page shows punishment names only.
+     * Duration is NOT displayed.
      */
     private ItemStack createBook(
             String target) {
@@ -332,7 +332,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     )
             );
 
-            tag.set("pages", pages);
+            tag.set(
+                    "pages",
+                    pages
+            );
+
             book.setTag(tag);
 
             return book;
@@ -403,7 +407,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             );
 
             /*
-             * Clicking the punishment executes pmapply.
+             * Click -> /pmapply player punishment
              */
             json.append(
                     ",\"clickEvent\":{\"action\":\"run_command\",\"value\":\""
@@ -417,6 +421,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     "\"}"
             );
 
+            /*
+             * Hover text.
+             */
             json.append(
                     ",\"hoverEvent\":{\"action\":\"show_text\",\"value\":\""
             );
@@ -455,7 +462,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
     }
 
     /*
-     * Applies a punishment.
+     * Apply punishment.
      */
     private void applyPunishment(
             Player staff,
@@ -521,7 +528,23 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 );
 
         /*
-         * Replace placeholders.
+         * Flooding = real IP ban.
+         */
+        if (type.equalsIgnoreCase("IP-BAN")) {
+
+            applyIpBan(
+                    staff,
+                    target,
+                    name,
+                    duration,
+                    reason
+            );
+
+            return;
+        }
+
+        /*
+         * Other punishments.
          */
         command =
                 command
@@ -547,25 +570,17 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         );
 
         if (command.startsWith("/")) {
-            command = command.substring(1);
+            command =
+                    command.substring(1);
         }
 
         boolean success = true;
 
-        /*
-         * IMPORTANT:
-         *
-         * The command is executed by the staff member.
-         *
-         * For Hacking:
-         *
-         * jail Player 3 days Using Hacking
-         *
-         * PunishmentJail remains responsible
-         * for the actual jail.
-         */
         if (!command.trim().isEmpty()) {
 
+            /*
+             * Execute as the administrator.
+             */
             success =
                     Bukkit.dispatchCommand(
                             staff,
@@ -584,12 +599,385 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             return;
         }
 
+        saveActivePunishment(
+                target,
+                name,
+                type,
+                duration,
+                reason,
+                staff.getName(),
+                ""
+        );
+
+        sendStaffDetails(
+                staff,
+                target,
+                name,
+                type,
+                duration,
+                reason
+        );
+
+        sendTargetDetails(
+                target,
+                name,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+    }
+
+    /*
+     * Real IP-Ban.
+     *
+     * Uses Bukkit's native IP ban list.
+     */
+    private void applyIpBan(
+            Player staff,
+            Player target,
+            String punishment,
+            String duration,
+            String reason) {
+
+        String ip =
+                target.getAddress()
+                        .getAddress()
+                        .getHostAddress();
+
+        if (ip == null ||
+                ip.trim().isEmpty()) {
+
+            staff.sendMessage(
+                    prefix +
+                    color(
+                            "&cCould not determine player's IP."
+                    )
+            );
+
+            return;
+        }
+
+        Bukkit.getBanList(
+                BanList.Type.IP
+        ).addBan(
+                ip,
+                reason,
+                null,
+                staff.getName()
+        );
+
+        saveActivePunishment(
+                target,
+                punishment,
+                "IP-BAN",
+                duration,
+                reason,
+                staff.getName(),
+                ip
+        );
+
+        sendStaffDetails(
+                staff,
+                target,
+                punishment,
+                "IP-BAN",
+                duration,
+                reason
+        );
+
+        sendTargetDetails(
+                target,
+                punishment,
+                "IP-BAN",
+                duration,
+                reason,
+                staff.getName()
+        );
+
         /*
-         * Save the punishment.
-         *
-         * This is used by /pmrevoke and the
-         * internal MUTE/BAN handling.
+         * Kick the player after IP ban.
          */
+        target.kickPlayer(
+                prefix +
+                color(
+                        "&cYou have been IP banned.\n" +
+                        "&7Reason: &f" +
+                        reason
+                )
+        );
+    }
+
+    /*
+     * Revoke punishment.
+     */
+    private void revokePunishment(
+            Player staff,
+            String targetName) {
+
+        Player target =
+                Bukkit.getPlayerExact(targetName);
+
+        PunishmentData data = null;
+
+        /*
+         * First try online player.
+         */
+        if (target != null) {
+
+            data =
+                    activePunishments.get(
+                            target.getUniqueId()
+                    );
+        }
+
+        /*
+         * If target is offline, search by name.
+         */
+        if (data == null) {
+
+            for (PunishmentData value :
+                    activePunishments.values()) {
+
+                if (value.player.equalsIgnoreCase(
+                        targetName)) {
+
+                    data = value;
+                    break;
+                }
+            }
+        }
+
+        if (data == null) {
+
+            staff.sendMessage(
+                    message(
+                            "revoke.messages.no-punishment"
+                    )
+            );
+
+            return;
+        }
+
+        /*
+         * IP-BAN.
+         */
+        if (data.type.equalsIgnoreCase(
+                "IP-BAN")) {
+
+            revokeIpBan(
+                    staff,
+                    data
+            );
+        }
+
+        /*
+         * JAIL.
+         */
+        else if (data.type.equalsIgnoreCase(
+                "JAIL")) {
+
+            String command =
+                    getConfig().getString(
+                            "revoke.jail-command",
+                            "unjail %player%"
+                    );
+
+            command =
+                    command
+                            .replace(
+                                    "%player%",
+                                    data.player
+                            )
+                            .replace(
+                                    "%staff%",
+                                    staff.getName()
+                            );
+
+            executeRevokeCommand(
+                    staff,
+                    command
+            );
+        }
+
+        /*
+         * MUTE.
+         */
+        else if (data.type.equalsIgnoreCase(
+                "MUTE")) {
+
+            String command =
+                    getConfig().getString(
+                            "revoke.mute-command",
+                            "unmute %player%"
+                    );
+
+            command =
+                    command
+                            .replace(
+                                    "%player%",
+                                    data.player
+                            )
+                            .replace(
+                                    "%staff%",
+                                    staff.getName()
+                            );
+
+            executeRevokeCommand(
+                    staff,
+                    command
+            );
+        }
+
+        /*
+         * BAN.
+         */
+        else if (data.type.equalsIgnoreCase(
+                "BAN")) {
+
+            String command =
+                    getConfig().getString(
+                            "revoke.ban-command",
+                            "pardon %player%"
+                    );
+
+            command =
+                    command
+                            .replace(
+                                    "%player%",
+                                    data.player
+                            )
+                            .replace(
+                                    "%staff%",
+                                    staff.getName()
+                            );
+
+            executeRevokeCommand(
+                    staff,
+                    command
+            );
+        }
+
+        activePunishments.remove(
+                data.uuid
+        );
+
+        removePunishmentFromFile(
+                data.uuid
+        );
+
+        savePunishments();
+
+        String staffMessage =
+                getConfig().getString(
+                        "revoke.messages.success",
+                        "&aPunishment revoked successfully."
+                );
+
+        staffMessage =
+                replaceDetails(
+                        staffMessage,
+                        data,
+                        staff.getName()
+                );
+
+        staff.sendMessage(
+                prefix +
+                color(staffMessage)
+        );
+
+        /*
+         * Notify target if online.
+         */
+        Player onlineTarget =
+                Bukkit.getPlayerExact(
+                        data.player
+                );
+
+        if (onlineTarget != null) {
+
+            String targetMessage =
+                    getConfig().getString(
+                            "revoke.messages.target",
+                            "&aYour punishment has been revoked by &f%staff%&a."
+                    );
+
+            targetMessage =
+                    replaceDetails(
+                            targetMessage,
+                            data,
+                            staff.getName()
+                    );
+
+            onlineTarget.sendMessage(
+                    prefix +
+                    color(targetMessage)
+            );
+        }
+    }
+
+    /*
+     * Revoke native IP ban.
+     */
+    private void revokeIpBan(
+            Player staff,
+            PunishmentData data) {
+
+        if (data.ip == null ||
+                data.ip.trim().isEmpty()) {
+
+            staff.sendMessage(
+                    prefix +
+                    color(
+                            "&cThe stored IP could not be found."
+                    )
+            );
+
+            return;
+        }
+
+        Bukkit.getBanList(
+                BanList.Type.IP
+        ).pardon(
+                data.ip
+        );
+    }
+
+    /*
+     * Execute revoke command.
+     */
+    private void executeRevokeCommand(
+            Player staff,
+            String command) {
+
+        if (command == null ||
+                command.trim().isEmpty()) {
+            return;
+        }
+
+        if (command.startsWith("/")) {
+            command =
+                    command.substring(1);
+        }
+
+        Bukkit.dispatchCommand(
+                staff,
+                command
+        );
+    }
+
+    /*
+     * Save punishment.
+     */
+    private void saveActivePunishment(
+            Player target,
+            String punishment,
+            String type,
+            String duration,
+            String reason,
+            String staff,
+            String ip) {
+
         PunishmentData data =
                 new PunishmentData();
 
@@ -600,7 +988,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 target.getName();
 
         data.punishment =
-                name;
+                punishment;
 
         data.type =
                 type;
@@ -612,7 +1000,10 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 reason;
 
         data.staff =
-                staff.getName();
+                staff;
+
+        data.ip =
+                ip;
 
         long millis =
                 parseDuration(duration);
@@ -628,226 +1019,126 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
 
         savePunishment(data);
+    }
 
-        /*
-         * Staff details.
-         */
-        sendStaffDetails(
-                staff,
-                target,
-                name,
-                type,
-                duration,
-                reason
-        );
+    /*
+     * Expiration handling.
+     */
+    private void checkExpiredPunishments() {
 
-        /*
-         * Target details.
-         */
-        sendTargetDetails(
-                target,
-                name,
-                type,
-                duration,
-                reason,
-                staff.getName()
+        long now =
+                System.currentTimeMillis();
+
+        ArrayList<PunishmentData> expired =
+                new ArrayList<PunishmentData>();
+
+        for (PunishmentData data :
+                activePunishments.values()) {
+
+            if (data.expires <= 0L) {
+                continue;
+            }
+
+            if (data.expires > now) {
+                continue;
+            }
+
+            expired.add(data);
+        }
+
+        for (PunishmentData data :
+                expired) {
+
+            /*
+             * IP-BAN must be automatically revoked.
+             */
+            if (data.type.equalsIgnoreCase(
+                    "IP-BAN")) {
+
+                if (data.ip != null &&
+                        !data.ip.isEmpty()) {
+
+                    Bukkit.getBanList(
+                            BanList.Type.IP
+                    ).pardon(data.ip);
+                }
+            }
+
+            /*
+             * MUTE is handled internally.
+             *
+             * Jail is NOT automatically released here.
+             * PunishmentJail controls the jail duration.
+             */
+
+            activePunishments.remove(
+                    data.uuid
+            );
+
+            removePunishmentFromFile(
+                    data.uuid
+            );
+        }
+
+        if (!expired.isEmpty()) {
+            savePunishments();
+        }
+    }
+
+    /*
+     * Internal mute.
+     */
+    @EventHandler
+    public void onChat(
+            AsyncPlayerChatEvent event) {
+
+        Player player =
+                event.getPlayer();
+
+        PunishmentData data =
+                activePunishments.get(
+                        player.getUniqueId()
+                );
+
+        if (data == null) {
+            return;
+        }
+
+        if (!data.type.equalsIgnoreCase(
+                "MUTE")) {
+            return;
+        }
+
+        if (data.expires > 0L &&
+                data.expires <=
+                        System.currentTimeMillis()) {
+
+            activePunishments.remove(
+                    player.getUniqueId()
+            );
+
+            removePunishmentFromFile(
+                    player.getUniqueId()
+            );
+
+            savePunishments();
+
+            return;
+        }
+
+        event.setCancelled(true);
+
+        player.sendMessage(
+                prefix +
+                color(
+                        "&cYou are currently muted."
+                )
         );
     }
 
     /*
-     * Revoke any of the seven punishments.
+     * Details to staff.
      */
-    private void revokePunishment(
-            Player staff,
-            String targetName) {
-
-        Player target =
-                Bukkit.getPlayerExact(targetName);
-
-        if (target == null) {
-
-            staff.sendMessage(
-                    message(
-                            "revoke.messages.player-not-online"
-                    )
-            );
-
-            return;
-        }
-
-        PunishmentData data =
-                activePunishments.remove(
-                        target.getUniqueId()
-                );
-
-        if (data == null) {
-
-            staff.sendMessage(
-                    message(
-                            "revoke.messages.no-punishment"
-                    )
-            );
-
-            return;
-        }
-
-        String type =
-                data.type.toUpperCase();
-
-        String command = "";
-
-        /*
-         * Jail -> PunishmentJail
-         */
-        if (type.equals("JAIL")) {
-
-            command =
-                    getConfig().getString(
-                            "revoke.jail-command",
-                            "unjail %player%"
-                    );
-        }
-
-        /*
-         * Mute -> external mute plugin
-         */
-        else if (type.equals("MUTE")) {
-
-            command =
-                    getConfig().getString(
-                            "revoke.mute-command",
-                            "unmute %player%"
-                    );
-        }
-
-        /*
-         * Ban
-         */
-        else if (type.equals("BAN")) {
-
-            command =
-                    getConfig().getString(
-                            "revoke.ban-command",
-                            "unban %player%"
-                    );
-        }
-
-        /*
-         * IP Ban
-         */
-        else if (type.equals("IP-BAN")) {
-
-            command =
-                    getConfig().getString(
-                            "revoke.ip-ban-command",
-                            "unban %player%"
-                    );
-        }
-
-        if (!command.trim().isEmpty()) {
-
-            command =
-                    command
-                            .replace(
-                                    "%player%",
-                                    target.getName()
-                            )
-                            .replace(
-                                    "%staff%",
-                                    staff.getName()
-                            )
-                            .replace(
-                                    "%punishment%",
-                                    data.punishment
-                            );
-
-            if (command.startsWith("/")) {
-                command =
-                        command.substring(1);
-            }
-
-            Bukkit.dispatchCommand(
-                    staff,
-                    command
-            );
-        }
-
-        removePunishmentFromFile(
-                target.getUniqueId()
-        );
-
-        savePunishments();
-
-        String staffMessage =
-                getConfig().getString(
-                        "revoke.messages.success",
-                        "&aPunishment revoked successfully."
-                );
-
-        staffMessage =
-                replaceDetails(
-                        staffMessage,
-                        target,
-                        data,
-                        staff.getName()
-                );
-
-        staff.sendMessage(
-                prefix + color(staffMessage)
-        );
-
-        String targetMessage =
-                getConfig().getString(
-                        "revoke.messages.target",
-                        "&aYour punishment has been revoked by &f%staff%&a."
-                );
-
-        targetMessage =
-                replaceDetails(
-                        targetMessage,
-                        target,
-                        data,
-                        staff.getName()
-                );
-
-        target.sendMessage(
-                prefix + color(targetMessage)
-        );
-    }
-
-    private String replaceDetails(
-            String text,
-            Player target,
-            PunishmentData data,
-            String staff) {
-
-        return text
-                .replace(
-                        "%player%",
-                        target.getName()
-                )
-                .replace(
-                        "%punishment%",
-                        data.punishment
-                )
-                .replace(
-                        "%type%",
-                        data.type
-                )
-                .replace(
-                        "%duration%",
-                        data.duration
-                )
-                .replace(
-                        "%reason%",
-                        data.reason
-                )
-                .replace(
-                        "%staff%",
-                        staff
-                );
-    }
-
     private void sendStaffDetails(
             Player staff,
             Player target,
@@ -934,6 +1225,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
     }
 
+    /*
+     * Details to target.
+     */
     private void sendTargetDetails(
             Player target,
             String punishment,
@@ -1073,93 +1367,81 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
     }
 
-    /*
-     * Internal mute handling.
-     */
-    @EventHandler
-    public void onChat(
-            AsyncPlayerChatEvent event) {
+    private String replaceDetails(
+            String text,
+            PunishmentData data,
+            String staff) {
 
-        Player player =
-                event.getPlayer();
-
-        PunishmentData data =
-                activePunishments.get(
-                        player.getUniqueId()
-                );
-
-        if (data == null) {
-            return;
-        }
-
-        if (!data.type.equalsIgnoreCase("MUTE")) {
-            return;
-        }
-
-        if (data.expires > 0L &&
-                data.expires <=
-                        System.currentTimeMillis()) {
-
-            activePunishments.remove(
-                    player.getUniqueId()
-            );
-
-            removePunishmentFromFile(
-                    player.getUniqueId()
-            );
-
-            savePunishments();
-
-            return;
-        }
-
-        event.setCancelled(true);
-
-        player.sendMessage(
-                prefix +
-                color(
-                        "&cYou are currently muted."
+        return text
+                .replace(
+                        "%player%",
+                        data.player
                 )
+                .replace(
+                        "%punishment%",
+                        data.punishment
+                )
+                .replace(
+                        "%type%",
+                        data.type
+                )
+                .replace(
+                        "%duration%",
+                        data.duration
+                )
+                .replace(
+                        "%reason%",
+                        data.reason
+                )
+                .replace(
+                        "%staff%",
+                        staff
+                )
+                .replace(
+                        "%ip%",
+                        data.ip == null
+                                ? ""
+                                : data.ip
+                );
+    }
+
+    private String message(
+            String path) {
+
+        return prefix +
+                color(
+                        getConfig().getString(
+                                path,
+                                ""
+                        )
+                );
+    }
+
+    private String color(
+            String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return ChatColor.translateAlternateColorCodes(
+                '&',
+                text
         );
     }
 
-    private void checkExpiredPunishments() {
+    private String escapeJson(
+            String text) {
 
-        long now =
-                System.currentTimeMillis();
-
-        ArrayList<UUID> ids =
-                new ArrayList<UUID>(
-                        activePunishments.keySet()
-                );
-
-        for (UUID uuid : ids) {
-
-            PunishmentData data =
-                    activePunishments.get(uuid);
-
-            if (data == null) {
-                continue;
-            }
-
-            /*
-             * Jail is controlled by PunishmentJail.
-             * Do not automatically release it here.
-             */
-            if (data.type.equalsIgnoreCase("JAIL")) {
-                continue;
-            }
-
-            if (data.expires > 0L &&
-                    data.expires <= now) {
-
-                activePunishments.remove(uuid);
-
-                removePunishmentFromFile(uuid);
-            }
+        if (text == null) {
+            return "";
         }
 
-        savePunishments();
+        return text
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n");
     }
 
     private long parseDuration(
@@ -1171,7 +1453,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         }
 
         String value =
-                duration.trim().toLowerCase();
+                duration
+                        .trim()
+                        .toLowerCase();
 
         String number =
                 value.replaceAll(
@@ -1213,45 +1497,6 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         }
 
         return 0L;
-    }
-
-    private String message(
-            String path) {
-
-        return prefix +
-                color(
-                        getConfig().getString(
-                                path,
-                                ""
-                        )
-                );
-    }
-
-    private String color(
-            String text) {
-
-        if (text == null) {
-            return "";
-        }
-
-        return ChatColor.translateAlternateColorCodes(
-                '&',
-                text
-        );
-    }
-
-    private String escapeJson(
-            String text) {
-
-        if (text == null) {
-            return "";
-        }
-
-        return text
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\r", "\\r")
-                .replace("\n", "\\n");
     }
 
     private void setupDataFile() {
@@ -1312,7 +1557,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         new PunishmentData();
 
                 data.uuid =
-                        UUID.fromString(uuidString);
+                        UUID.fromString(
+                                uuidString
+                        );
 
                 data.player =
                         dataConfig.getString(
@@ -1350,9 +1597,16 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                                 ""
                         );
 
+                data.ip =
+                        dataConfig.getString(
+                                path + ".ip",
+                                ""
+                        );
+
                 data.expires =
                         dataConfig.getLong(
-                                path + ".expires"
+                                path + ".expires",
+                                0L
                         );
 
                 activePunishments.put(
@@ -1408,6 +1662,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
 
         dataConfig.set(
+                path + ".ip",
+                data.ip
+        );
+
+        dataConfig.set(
                 path + ".expires",
                 data.expires
         );
@@ -1443,6 +1702,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         private String duration;
         private String reason;
         private String staff;
+        private String ip;
         private long expires;
     }
 }
