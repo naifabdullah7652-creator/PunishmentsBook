@@ -1,25 +1,49 @@
+settings:
+  jail-world: "world"
+  jail-x: 0.5
+  jail-y: 64.0
+  jail-z: 0.5
+
 punishments:
 
-  fly:
-    name: "Fly"
+  hacking:
+    name: "Hacking"
+    type: "JAIL"
     duration: "3 days"
-    reason: "Using Fly"
-    command: "jail %player% %duration%"
+    reason: "Hacking"
 
-  killaura:
-    name: "KillAura"
-    duration: "7 days"
-    reason: "Using KillAura"
-    command: "jail %player% %duration%"
-
-  reach:
-    name: "Reach"
-    duration: "3 days"
-    reason: "Using Reach"
-    command: "jail %player% %duration%"
-
-  spam:
+  spamming:
     name: "Spamming"
+    type: "MUTE"
     duration: "3 hours"
-    reason: "Chat Spam"
-    command: "mute %player% %duration%"
+    reason: "Spamming"
+
+  swearing:
+    name: "Swearing"
+    type: "MUTE"
+    duration: "7 hours"
+    reason: "Swearing"
+
+  disrespect:
+    name: "Disrespect"
+    type: "MUTE"
+    duration: "4 hours"
+    reason: "Disrespect"
+
+  advertising:
+    name: "Advertising"
+    type: "MUTE"
+    duration: "14 days"
+    reason: "Advertising"
+
+  voice:
+    name: "Voice"
+    type: "BAN"
+    duration: "4 days"
+    reason: "Voice violation"
+
+  flooding:
+    name: "Flooding"
+    type: "IP_BAN"
+    duration: "18 days"
+    reason: "Flooding Bot/Ddos"
