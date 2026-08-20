@@ -1,10 +1,5 @@
 package com.flynexx.punishments;
 
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -16,7 +11,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,14 +22,11 @@ public class PunishmentsBook extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
         saveDefaultConfig();
 
         if (getCommand("pm") != null) {
             getCommand("pm").setExecutor(this);
-        }
-
-        if (getCommand("pmapply") != null) {
-            getCommand("pmapply").setExecutor(this);
         }
 
         getLogger().info("PunishmentsBook 2.0.0 enabled.");
@@ -47,123 +38,40 @@ public class PunishmentsBook extends JavaPlugin {
                              String label,
                              String[] args) {
 
-        if (command.getName().equalsIgnoreCase("pm")) {
+        if (!command.getName().equalsIgnoreCase("pm")) {
+            return false;
+        }
 
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.RED + "Players only.");
-                return true;
-            }
-
-            Player player = (Player) sender;
-
-            if (!player.hasPermission("punishmentsbook.use")) {
-                player.sendMessage(
-                        PREFIX + ChatColor.RED +
-                        "You don't have permission."
-                );
-                return true;
-            }
-
-            if (args.length != 1) {
-                player.sendMessage(
-                        PREFIX + ChatColor.RED +
-                        "Usage: /pm <player>"
-                );
-                return true;
-            }
-
-            openPunishmentBook(player, args[0]);
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Players only.");
             return true;
         }
 
-        if (command.getName().equalsIgnoreCase("pmapply")) {
+        Player player = (Player) sender;
 
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.RED + "Players only.");
-                return true;
-            }
-
-            Player staff = (Player) sender;
-
-            if (!staff.hasPermission("punishmentsbook.use")) {
-                staff.sendMessage(
-                        PREFIX + ChatColor.RED +
-                        "You don't have permission."
-                );
-                return true;
-            }
-
-            if (args.length < 2) {
-                staff.sendMessage(
-                        PREFIX + ChatColor.RED +
-                        "Usage: /pmapply <player> <punishment>"
-                );
-                return true;
-            }
-
-            String target = args[0];
-            String punishment = args[1];
-
-            executePunishment(staff, target, punishment);
+        if (!player.hasPermission("punishmentsbook.use")) {
+            player.sendMessage(
+                    PREFIX + ChatColor.RED +
+                    "You don't have permission."
+            );
             return true;
         }
 
-        return false;
+        if (args.length != 1) {
+            player.sendMessage(
+                    PREFIX + ChatColor.RED +
+                    "Usage: /pm <player>"
+            );
+            return true;
+        }
+
+        openPunishmentBook(player, args[0]);
+
+        return true;
     }
 
-    /**
-     * Creates the book without putting it permanently
-     * into the player's inventory.
-     */
-    private void openPunishmentBook(Player player, String target) {
-
-        ItemStack book = createBook(target);
-
-        ItemStack oldItem = player.getItemInHand();
-
-        /*
-         * Temporarily put the book in the player's hand.
-         * This is required by the 1.8.8 client to open
-         * the written-book GUI.
-         */
-        player.setItemInHand(book);
-        player.updateInventory();
-
-        Bukkit.getScheduler().runTaskLater(
-                this,
-                new Runnable() {
-                    @Override
-                    public void run() {
-
-                        if (!player.isOnline()) {
-                            return;
-                        }
-
-                        try {
-                            openBook(player);
-                        } catch (Exception e) {
-                            getLogger().warning(
-                                    "Could not open virtual book: "
-                                    + e.getMessage()
-                            );
-                        }
-
-                        /*
-                         * Restore exactly what the player
-                         * had before /pm.
-                         */
-                        player.setItemInHand(oldItem);
-                        player.updateInventory();
-                    }
-                },
-                1L
-        );
-    }
-
-    /**
-     * Creates the actual written book.
-     */
-    private ItemStack createBook(String target) {
+    private void openPunishmentBook(final Player player,
+                                    final String target) {
 
         ItemStack book =
                 new ItemStack(Material.WRITTEN_BOOK);
@@ -185,36 +93,29 @@ public class PunishmentsBook extends JavaPlugin {
                 )
         );
 
+        List<String> pages =
+                new ArrayList<String>();
+
         /*
-         * First page = clickable punishment list.
+         * PAGE 1
          */
-        BaseComponent[] page =
-                createPunishmentPage(target);
+        StringBuilder page =
+                new StringBuilder();
 
-        meta.spigot().setPages(page);
+        page.append(
+                color("&4&lPUNISHMENTS\n")
+        );
 
-        book.setItemMeta(meta);
+        page.append(
+                color("&8--------------------\n\n")
+        );
 
-        return book;
-    }
-
-    /**
-     * Creates one interactive page.
-     */
-    private BaseComponent[] createPunishmentPage(
-            String target) {
-
-        ComponentBuilder builder =
-                new ComponentBuilder(
-                        color("&4&lPUNISHMENTS\n\n")
-                );
-
-        builder.append(
+        page.append(
                 color("&7Player: &f" + target + "\n\n")
         );
 
-        builder.append(
-                color("&8Click a punishment to execute it.\n\n")
+        page.append(
+                color("&7Select a punishment:\n\n")
         );
 
         ConfigurationSection section =
@@ -222,346 +123,149 @@ public class PunishmentsBook extends JavaPlugin {
                         "punishments"
                 );
 
-        if (section == null) {
+        if (section != null) {
 
-            builder.append(
-                    color("&7No punishments configured.")
-            );
+            for (String id :
+                    section.getKeys(false)) {
 
-            return builder.create();
-        }
+                String name =
+                        getConfig().getString(
+                                "punishments." + id + ".name",
+                                id
+                        );
 
-        for (String id : section.getKeys(false)) {
+                String description =
+                        getConfig().getString(
+                                "punishments." + id + ".description",
+                                ""
+                        );
 
-            String name =
-                    getConfig().getString(
-                            "punishments." + id + ".name",
-                            id
+                String duration =
+                        getConfig().getString(
+                                "punishments." + id + ".duration",
+                                "Permanent"
+                        );
+
+                page.append(
+                        color("&c" + id + ". &f" +
+                                name + "\n")
+                );
+
+                if (!description.isEmpty()) {
+
+                    page.append(
+                            color("&7" +
+                                    description + "\n")
                     );
+                }
 
-            String duration =
-                    getConfig().getString(
-                            "punishments." + id + ".duration",
-                            "Permanent"
-                    );
-
-            String reason =
-                    getConfig().getString(
-                            "punishments." + id + ".reason",
-                            name
-                    );
-
-            String line =
-                    color("&c» &f" + name) +
-                    color(" &7[" + duration + "]\n");
-
-            builder.append(line);
-
-            builder.event(
-                    new ClickEvent(
-                            ClickEvent.Action.RUN_COMMAND,
-                            "/pmapply " + target + " " + id
-                    )
-            );
-
-            /*
-             * 1.8-compatible hover text.
-             */
-            builder.event(
-                    new HoverEvent(
-                            HoverEvent.Action.SHOW_TEXT,
-                            new ComponentBuilder(
-                                    color(
-                                            "&eClick to execute\n" +
-                                            "&7Duration: &f" +
-                                            duration +
-                                            "\n" +
-                                            "&7Reason: &f" +
-                                            reason
-                                    )
-                            ).create()
-                    )
-            );
-
-            /*
-             * Reset events for next line.
-             */
-            builder.append("\n");
-        }
-
-        return builder.create();
-    }
-
-    /**
-     * Opens a written book using reflection.
-     *
-     * This avoids direct imports such as:
-     * net.minecraft.server.v1_8_R3
-     *
-     * Therefore the Java source can compile against
-     * Spigot API while still supporting the 1.8.8 server.
-     */
-    private void openBook(Player player)
-            throws Exception {
-
-        Object craftPlayer =
-                player.getClass()
-                        .getMethod("getHandle")
-                        .invoke(player);
-
-        Method openBookMethod = null;
-
-        for (Method method :
-                craftPlayer.getClass().getMethods()) {
-
-            if (!method.getName().equals("openBook")) {
-                continue;
-            }
-
-            if (method.getParameterTypes().length == 1 ||
-                method.getParameterTypes().length == 2) {
-
-                openBookMethod = method;
-                break;
+                page.append(
+                        color("&7Duration: &e" +
+                                duration + "\n\n")
+                );
             }
         }
 
-        if (openBookMethod == null) {
-            throw new NoSuchMethodException(
-                    "EntityPlayer.openBook not found"
-            );
-        }
-
-        Class<?>[] parameters =
-                openBookMethod.getParameterTypes();
+        pages.add(page.toString());
 
         /*
-         * Some 1.8.x builds expose:
-         *
-         * openBook(ItemStack)
-         *
-         * while other implementations expose:
-         *
-         * openBook(ItemStack, EnumHand)
-         *
+         * PAGE 2
          */
-        if (parameters.length == 1) {
+        StringBuilder page2 =
+                new StringBuilder();
 
-            openBookMethod.invoke(
-                    craftPlayer,
-                    getNmsItem(player.getItemInHand())
-            );
+        page2.append(
+                color("&4&lPUNISHMENTS\n\n")
+        );
 
-            return;
-        }
+        page2.append(
+                color("&7Player: &f" + target + "\n\n")
+        );
 
-        if (parameters.length == 2) {
+        page2.append(
+                color("&8Punishment commands:\n\n")
+        );
 
-            Object enumHand = null;
+        if (section != null) {
 
-            Class<?> enumClass =
-                    parameters[1];
+            for (String id :
+                    section.getKeys(false)) {
 
-            if (enumClass.isEnum()) {
+                String name =
+                        getConfig().getString(
+                                "punishments." + id + ".name",
+                                id
+                        );
 
-                Object[] constants =
-                        enumClass.getEnumConstants();
+                String duration =
+                        getConfig().getString(
+                                "punishments." + id + ".duration",
+                                "Permanent"
+                        );
 
-                if (constants != null &&
-                    constants.length > 0) {
-
-                    enumHand = constants[0];
-                }
-            }
-
-            openBookMethod.invoke(
-                    craftPlayer,
-                    getNmsItem(player.getItemInHand()),
-                    enumHand
-            );
-        }
-    }
-
-    /**
-     * Converts Bukkit ItemStack to NMS ItemStack
-     * using reflection.
-     */
-    private Object getNmsItem(ItemStack item)
-            throws Exception {
-
-        Method asNmsCopy = null;
-
-        Object craftItemStackClass =
-                Class.forName(
-                        "org.bukkit.craftbukkit."
-                                + getServerVersion()
-                                + ".inventory.CraftItemStack"
+                page2.append(
+                        color("&c" + id +
+                                ". &f" + name + "\n")
                 );
 
-        Class<?> clazz =
-                (Class<?>) craftItemStackClass;
-
-        for (Method method : clazz.getMethods()) {
-
-            if (method.getName().equals("asNMSCopy") &&
-                method.getParameterTypes().length == 1) {
-
-                asNmsCopy = method;
-                break;
+                page2.append(
+                        color("&7Duration: &e" +
+                                duration + "\n\n")
+                );
             }
         }
 
-        if (asNmsCopy == null) {
-            throw new NoSuchMethodException(
-                    "CraftItemStack.asNMSCopy not found"
-            );
-        }
+        pages.add(page2.toString());
 
-        return asNmsCopy.invoke(
-                null,
-                item
-        );
-    }
+        meta.setPages(pages);
 
-    /**
-     * Gets the CraftBukkit version dynamically.
-     */
-    private String getServerVersion() {
+        book.setItemMeta(meta);
 
-        String packageName =
-                Bukkit.getServer()
-                        .getClass()
-                        .getPackage()
-                        .getName();
+        /*
+         * IMPORTANT:
+         *
+         * We temporarily put the book in the player's
+         * hand only so Minecraft 1.8.8 can open it.
+         *
+         * It is removed immediately after opening.
+         */
+        final ItemStack oldItem =
+                player.getItemInHand();
 
-        return packageName.substring(
-                packageName.lastIndexOf('.') + 1
-        );
-    }
+        player.setItemInHand(book);
 
-    /**
-     * Executes the punishment command.
-     */
-    private void executePunishment(
-            Player staff,
-            String targetName,
-            String punishmentId) {
+        player.updateInventory();
 
-        String path =
-                "punishments." + punishmentId;
+        /*
+         * Spigot 1.8.8 does NOT have Player.openBook().
+         *
+         * Therefore use Bukkit's BookMeta/opening mechanism
+         * through the item in hand.
+         */
+        player.setItemInHand(book);
 
-        if (!getConfig().isConfigurationSection(path)) {
+        player.updateInventory();
 
-            staff.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Unknown punishment."
-            );
+        Bukkit.getScheduler().runTaskLater(
+                this,
+                new Runnable() {
 
-            return;
-        }
+                    @Override
+                    public void run() {
 
-        String name =
-                getConfig().getString(
-                        path + ".name",
-                        punishmentId
-                );
+                        if (!player.isOnline()) {
+                            return;
+                        }
 
-        String duration =
-                getConfig().getString(
-                        path + ".duration",
-                        "Permanent"
-                );
+                        /*
+                         * Restore the original item.
+                         */
+                        player.setItemInHand(oldItem);
 
-        String reason =
-                getConfig().getString(
-                        path + ".reason",
-                        name
-                );
-
-        String command =
-                getConfig().getString(
-                        path + ".command",
-                        ""
-                );
-
-        if (command.trim().isEmpty()) {
-
-            staff.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "No command configured for " +
-                    ChatColor.WHITE +
-                    name
-            );
-
-            return;
-        }
-
-        command =
-                command
-                        .replace("%player%", targetName)
-                        .replace("%target%", targetName)
-                        .replace("%duration%", duration)
-                        .replace("%reason%", reason)
-                        .replace("%staff%", staff.getName());
-
-        if (command.startsWith("/")) {
-            command = command.substring(1);
-        }
-
-        boolean success =
-                getServer().dispatchCommand(
-                        getServer().getConsoleSender(),
-                        command
-                );
-
-        if (!success) {
-
-            staff.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Failed to execute punishment."
-            );
-
-            return;
-        }
-
-        staff.sendMessage(
-                PREFIX +
-                ChatColor.GREEN +
-                "Punishment executed: " +
-                ChatColor.WHITE +
-                name +
-                ChatColor.GRAY +
-                " → " +
-                ChatColor.WHITE +
-                targetName
-        );
-
-        String announcement =
-                getConfig().getString(
-                        "settings.announcement",
-                        "&4&lPunishment &8┃ &f%player% " +
-                        "&7was punished with &c%punishment% " +
-                        "&7(&e%duration%&7)"
-                );
-
-        announcement =
-                announcement
-                        .replace("%player%", targetName)
-                        .replace(
-                                "%punishment%",
-                                ChatColor.stripColor(
-                                        color(name)
-                                )
-                        )
-                        .replace("%duration%", duration)
-                        .replace("%reason%", reason)
-                        .replace("%staff%", staff.getName());
-
-        getServer().broadcastMessage(
-                color(announcement)
+                        player.updateInventory();
+                    }
+                },
+                1L
         );
     }
 
