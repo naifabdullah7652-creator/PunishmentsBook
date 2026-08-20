@@ -96,9 +96,9 @@ punishments:
     reason: "Voice Violation"
     command: ""
 
-  flooding:
-    name: "Flooding"
-    type: "IP-BAN"
-    duration: "18 days"
-    reason: "Flooding"
-    command: ""
+ flooding:
+  name: "Flooding"
+  type: "IP-BAN"
+  duration: "18 days"
+  reason: "Flooding"
+  command: ""
