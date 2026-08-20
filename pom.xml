@@ -39,6 +39,16 @@
             <artifactId>spigot-api</artifactId>
             <version>1.8.8-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
+
+            <exclusions>
+
+                <exclusion>
+                    <groupId>net.md-5</groupId>
+                    <artifactId>bungeecord-chat</artifactId>
+                </exclusion>
+
+            </exclusions>
+
         </dependency>
 
     </dependencies>
@@ -52,10 +62,6 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
-                <includes>
-                    <include>plugin.yml</include>
-                    <include>config.yml</include>
-                </includes>
             </resource>
 
         </resources>
@@ -82,9 +88,6 @@
 
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <nonFilteredFileExtensions>
-                        <nonFilteredFileExtension>yml</nonFilteredFileExtension>
-                    </nonFilteredFileExtensions>
                 </configuration>
 
             </plugin>
