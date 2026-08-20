@@ -1,8 +1,38 @@
 settings:
-  jail-world: "world"
-  jail-x: 0.5
-  jail-y: 64.0
-  jail-z: 0.5
+  prefix: "&8[&4PunishmentsBook&8] &7┃ "
+
+messages:
+
+  staff:
+    applied: "&aPunishment Applied"
+    player: "&7Player: &f%player%"
+    punishment: "&7Punishment: &f%punishment%"
+    type: "&7Type: &f%type%"
+    duration: "&7Duration: &f%duration%"
+    reason: "&7Reason: &f%reason%"
+    staff: "&7Staff: &f%staff%"
+
+  target:
+    applied: "&cYou have been punished."
+    player: "&7Player: &f%player%"
+    punishment: "&7Punishment: &f%punishment%"
+    type: "&7Type: &f%type%"
+    duration: "&7Duration: &f%duration%"
+    reason: "&7Reason: &f%reason%"
+    staff: "&7Staff: &f%staff%"
+
+  mute:
+    message: "&cYou are muted."
+    reason: "&7Reason: &f%reason%"
+    duration: "&7Duration: &f%duration%"
+    staff: "&7Staff: &f%staff%"
+
+  errors:
+    no-permission: "&cYou don't have permission."
+    player-not-online: "&cPlayer is not online."
+    unknown-punishment: "&cUnknown punishment."
+    command-failed: "&cPunishment command failed."
+    players-only: "&cPlayers only."
 
 punishments:
 
@@ -11,40 +41,46 @@ punishments:
     type: "JAIL"
     duration: "3 days"
     reason: "Using Hacking"
-    command: "jail %player% 3 days"
+    command: "jail %player% %duration%"
 
   spamming:
     name: "Spamming"
     type: "MUTE"
     duration: "3 hours"
-    reason: "Spamming"
+    reason: "Chat Spam"
+    command: ""
 
   swearing:
     name: "Swearing"
     type: "MUTE"
     duration: "7 hours"
     reason: "Swearing"
+    command: ""
 
   disrespect:
     name: "Disrespect"
     type: "MUTE"
     duration: "4 hours"
     reason: "Disrespect"
+    command: ""
 
   advertising:
     name: "Advertising"
     type: "MUTE"
     duration: "14 days"
     reason: "Advertising"
+    command: ""
 
   voice:
     name: "Voice"
     type: "BAN"
     duration: "4 days"
-    reason: "Voice violation"
+    reason: "Voice Violation"
+    command: ""
 
   flooding:
     name: "Flooding"
-    type: "IP_BAN"
+    type: "IP-BAN"
     duration: "18 days"
-    reason: "Flooding Bot/Ddos"
+    reason: "Flooding"
+    command: ""
