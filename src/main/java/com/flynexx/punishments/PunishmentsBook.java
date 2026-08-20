@@ -8,9 +8,7 @@ import net.minecraft.server.v1_8_R3.NBTTagString;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -21,36 +19,36 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class PunishmentsBook extends JavaPlugin implements Listener {
 
-    private static final String PREFIX =
-            ChatColor.DARK_RED + "PunishmentsBook " +
-            ChatColor.DARK_GRAY + "┃ ";
-
     private final Map<UUID, PunishmentData> punishments =
             new HashMap<UUID, PunishmentData>();
 
-    private final Map<UUID, Location> previousLocations =
-            new HashMap<UUID, Location>();
-
     private File dataFile;
-
     private org.bukkit.configuration.file.FileConfiguration dataConfig;
+
+    private String prefix;
 
     @Override
     public void onEnable() {
 
         saveDefaultConfig();
+
+        prefix = color(
+                getConfig().getString(
+                        "settings.prefix",
+                        "&8[&4PunishmentsBook&8] &7┃ "
+                )
+        );
 
         setupDataFile();
         loadPunishments();
@@ -61,10 +59,6 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         if (getCommand("pmapply") != null) {
             getCommand("pmapply").setExecutor(this);
-        }
-
-        if (getCommand("pmsetjail") != null) {
-            getCommand("pmsetjail").setExecutor(this);
         }
 
         Bukkit.getPluginManager().registerEvents(
@@ -85,7 +79,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
 
         getLogger().info(
-                "PunishmentsBook 3.1.0 enabled."
+                "PunishmentsBook enabled."
         );
     }
 
@@ -108,8 +102,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             if (!(sender instanceof Player)) {
                 sender.sendMessage(
-                        ChatColor.RED +
-                        "Players only."
+                        prefix +
+                        color("&cPlayers only.")
                 );
                 return true;
             }
@@ -120,9 +114,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     "punishmentsbook.use")) {
 
                 staff.sendMessage(
-                        PREFIX +
-                        ChatColor.RED +
-                        "You don't have permission."
+                        prefix +
+                        color("&cYou don't have permission.")
                 );
 
                 return true;
@@ -131,9 +124,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             if (args.length != 1) {
 
                 staff.sendMessage(
-                        PREFIX +
-                        ChatColor.RED +
-                        "Usage: /pm <player>"
+                        prefix +
+                        color("&cUsage: /pm <player>")
                 );
 
                 return true;
@@ -176,73 +168,6 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             return true;
         }
 
-        /*
-         * /pmsetjail
-         */
-        if (command.getName().equalsIgnoreCase("pmsetjail")) {
-
-            if (!(sender instanceof Player)) {
-                return true;
-            }
-
-            Player player = (Player) sender;
-
-            if (!player.hasPermission(
-                    "punishmentsbook.setjail")) {
-
-                player.sendMessage(
-                        PREFIX +
-                        ChatColor.RED +
-                        "You don't have permission."
-                );
-
-                return true;
-            }
-
-            Location loc =
-                    player.getLocation();
-
-            getConfig().set(
-                    "settings.jail-world",
-                    loc.getWorld().getName()
-            );
-
-            getConfig().set(
-                    "settings.jail-x",
-                    loc.getX()
-            );
-
-            getConfig().set(
-                    "settings.jail-y",
-                    loc.getY()
-            );
-
-            getConfig().set(
-                    "settings.jail-z",
-                    loc.getZ()
-            );
-
-            getConfig().set(
-                    "settings.jail-yaw",
-                    loc.getYaw()
-            );
-
-            getConfig().set(
-                    "settings.jail-pitch",
-                    loc.getPitch()
-            );
-
-            saveConfig();
-
-            player.sendMessage(
-                    PREFIX +
-                    ChatColor.GREEN +
-                    "Jail location saved."
-            );
-
-            return true;
-        }
-
         return false;
     }
 
@@ -274,7 +199,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     new Runnable() {
                         @Override
                         public void run() {
-                            player.setItemInHand(oldItem);
+
+                            player.setItemInHand(
+                                    oldItem
+                            );
+
                             player.updateInventory();
                         }
                     },
@@ -291,9 +220,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             );
 
             player.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Could not open punishment book."
+                    prefix +
+                    color("&cCould not open punishment book.")
             );
         }
     }
@@ -338,7 +266,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     )
             );
 
-            tag.set("pages", pages);
+            tag.set(
+                    "pages",
+                    pages
+            );
+
             book.setTag(tag);
 
             return book;
@@ -364,18 +296,22 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                             id
                     );
 
-            String command =
-                    "/pmapply " +
-                    target +
-                    " " +
-                    id;
-
             if (!first) {
                 json.append(",");
             }
 
             first = false;
 
+            String command =
+                    "/pmapply " +
+                    target +
+                    " " +
+                    id;
+
+            /*
+             * اسم العقوبة فقط.
+             * لا يتم عرض المدة داخل الكتاب.
+             */
             json.append(
                     "{\"text\":\""
             );
@@ -388,6 +324,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     "\",\"color\":\"black\",\"underlined\":true,"
             );
 
+            /*
+             * الضغط ينفذ pmapply مباشرة.
+             */
             json.append(
                     "\"clickEvent\":{\"action\":\"run_command\",\"value\":\""
             );
@@ -397,15 +336,17 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             );
 
             json.append(
-                    "\"},"
+                    "\"}"
             );
 
             json.append(
-                    "\"hoverEvent\":{\"action\":\"show_text\",\"value\":\"Apply "
+                    ",\"hoverEvent\":{\"action\":\"show_text\",\"value\":\""
             );
 
             json.append(
-                    escapeJson(name)
+                    escapeJson(
+                            "Apply " + name
+                    )
             );
 
             json.append(
@@ -449,9 +390,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (!getConfig().isConfigurationSection(path)) {
 
             staff.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Unknown punishment."
+                    prefix +
+                    color("&cUnknown punishment.")
             );
 
             return;
@@ -463,9 +403,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (target == null) {
 
             staff.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Player is not online."
+                    prefix +
+                    color("&cPlayer is not online.")
             );
 
             return;
@@ -492,259 +431,191 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         String type =
                 getConfig().getString(
                         path + ".type",
-                        "JAIL"
+                        "MUTE"
                 );
 
-        long durationMillis =
-                parseDuration(duration);
+        String configuredCommand =
+                getConfig().getString(
+                        path + ".command",
+                        ""
+                );
 
-        if (durationMillis <= 0L) {
+        /*
+         * تنفيذ أمر PunishmentJail أو أي نظام
+         * خارجي يتم تحديده من config.yml.
+         *
+         * يتم التنفيذ باسم الإداري الذي ضغط،
+         * وليس من Console.
+         */
+        String command =
+                configuredCommand
+                        .replace(
+                                "%player%",
+                                target.getName()
+                        )
+                        .replace(
+                                "%target%",
+                                target.getName()
+                        )
+                        .replace(
+                                "%duration%",
+                                duration
+                        )
+                        .replace(
+                                "%reason%",
+                                reason
+                        )
+                        .replace(
+                                "%staff%",
+                                staff.getName()
+                        );
+
+        if (command.startsWith("/")) {
+            command =
+                    command.substring(1);
+        }
+
+        boolean commandSuccess = true;
+
+        if (!command.trim().isEmpty()) {
+
+            commandSuccess =
+                    Bukkit.dispatchCommand(
+                            staff,
+                            command
+                    );
+        }
+
+        /*
+         * MUTE داخلي في PunishmentsBook.
+         */
+        if (type.equalsIgnoreCase("MUTE")) {
+
+            long durationMillis =
+                    parseDuration(duration);
+
+            if (durationMillis > 0L) {
+
+                PunishmentData data =
+                        new PunishmentData();
+
+                data.uuid =
+                        target.getUniqueId();
+
+                data.player =
+                        target.getName();
+
+                data.punishment =
+                        name;
+
+                data.type =
+                        "MUTE";
+
+                data.duration =
+                        duration;
+
+                data.reason =
+                        reason;
+
+                data.staff =
+                        staff.getName();
+
+                data.expires =
+                        System.currentTimeMillis()
+                                + durationMillis;
+
+                punishments.put(
+                        target.getUniqueId(),
+                        data
+                );
+
+                savePunishment(data);
+            }
+        }
+
+        if (!commandSuccess) {
 
             staff.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Invalid duration."
+                    prefix +
+                    color("&cPunishment command failed.")
             );
 
             return;
         }
 
-        PunishmentData data =
-                new PunishmentData();
-
-        data.uuid =
-                target.getUniqueId();
-
-        data.player =
-                target.getName();
-
-        data.punishment =
-                name;
-
-        data.type =
-                type;
-
-        data.duration =
-                duration;
-
-        data.reason =
-                reason;
-
-        data.staff =
-                staff.getName();
-
-        data.expires =
-                System.currentTimeMillis()
-                        + durationMillis;
-
-        punishments.put(
-                target.getUniqueId(),
-                data
-        );
-
-        if (type.equalsIgnoreCase("JAIL")) {
-
-            jailPlayer(target);
-
-        } else if (type.equalsIgnoreCase("MUTE")) {
-
-            // Handled by chat event.
-
-        } else if (type.equalsIgnoreCase("BAN")) {
-
-            target.kickPlayer(
-                    ChatColor.RED +
-                    "You have been banned.\n\n" +
-                    ChatColor.WHITE +
-                    "Punishment: " +
-                    name +
-                    "\nReason: " +
-                    reason +
-                    "\nDuration: " +
-                    duration +
-                    "\nStaff: " +
-                    staff.getName()
-            );
-        }
-
-        savePunishment(data);
-
         /*
-         * ADMIN MESSAGE
+         * رسالة الإداري.
          */
         staff.sendMessage("");
 
         staff.sendMessage(
-                PREFIX +
-                ChatColor.GREEN +
-                "Punishment Applied"
+                prefix +
+                color("&aPunishment Applied")
         );
 
         staff.sendMessage(
-                ChatColor.GRAY +
-                "Player: " +
-                ChatColor.WHITE +
+                color("&7Player: &f") +
                 target.getName()
         );
 
         staff.sendMessage(
-                ChatColor.GRAY +
-                "Punishment: " +
-                ChatColor.WHITE +
+                color("&7Punishment: &f") +
                 name
         );
 
         staff.sendMessage(
-                ChatColor.GRAY +
-                "Type: " +
-                ChatColor.WHITE +
+                color("&7Type: &f") +
                 type
         );
 
         staff.sendMessage(
-                ChatColor.GRAY +
-                "Duration: " +
-                ChatColor.WHITE +
+                color("&7Duration: &f") +
                 duration
         );
 
         staff.sendMessage(
-                ChatColor.GRAY +
-                "Reason: " +
-                ChatColor.WHITE +
+                color("&7Reason: &f") +
                 reason
         );
 
         staff.sendMessage(
-                ChatColor.GRAY +
-                "Staff: " +
-                ChatColor.WHITE +
+                color("&7Staff: &f") +
                 staff.getName()
         );
 
         /*
-         * TARGET MESSAGE
+         * رسالة اللاعب.
          */
-        if (!type.equalsIgnoreCase("BAN")) {
+        target.sendMessage("");
 
-            target.sendMessage("");
-
-            target.sendMessage(
-                    ChatColor.DARK_RED +
-                    "Punishment"
-            );
-
-            target.sendMessage(
-                    ChatColor.GRAY +
-                    "Punishment: " +
-                    ChatColor.WHITE +
-                    name
-            );
-
-            target.sendMessage(
-                    ChatColor.GRAY +
-                    "Type: " +
-                    ChatColor.WHITE +
-                    type
-            );
-
-            target.sendMessage(
-                    ChatColor.GRAY +
-                    "Duration: " +
-                    ChatColor.WHITE +
-                    duration
-            );
-
-            target.sendMessage(
-                    ChatColor.GRAY +
-                    "Reason: " +
-                    ChatColor.WHITE +
-                    reason
-            );
-
-            target.sendMessage(
-                    ChatColor.GRAY +
-                    "Staff: " +
-                    ChatColor.WHITE +
-                    staff.getName()
-            );
-        }
-    }
-
-    private void jailPlayer(
-            Player player) {
-
-        Location jail =
-                getJailLocation();
-
-        if (jail == null) {
-
-            player.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
-                    "Jail location is not configured."
-            );
-
-            return;
-        }
-
-        previousLocations.put(
-                player.getUniqueId(),
-                player.getLocation()
+        target.sendMessage(
+                prefix +
+                color("&cYou have been punished.")
         );
 
-        player.teleport(jail);
-    }
+        target.sendMessage(
+                color("&7Punishment: &f") +
+                name
+        );
 
-    private Location getJailLocation() {
+        target.sendMessage(
+                color("&7Type: &f") +
+                type
+        );
 
-        String worldName =
-                getConfig().getString(
-                        "settings.jail-world",
-                        ""
-                );
+        target.sendMessage(
+                color("&7Duration: &f") +
+                duration
+        );
 
-        World world =
-                Bukkit.getWorld(worldName);
+        target.sendMessage(
+                color("&7Reason: &f") +
+                reason
+        );
 
-        if (world == null) {
-            return null;
-        }
-
-        double x =
-                getConfig().getDouble(
-                        "settings.jail-x"
-                );
-
-        double y =
-                getConfig().getDouble(
-                        "settings.jail-y"
-                );
-
-        double z =
-                getConfig().getDouble(
-                        "settings.jail-z"
-                );
-
-        float yaw =
-                (float) getConfig().getDouble(
-                        "settings.jail-yaw",
-                        0
-                );
-
-        float pitch =
-                (float) getConfig().getDouble(
-                        "settings.jail-pitch",
-                        0
-                );
-
-        return new Location(
-                world,
-                x,
-                y,
-                z,
-                yaw,
-                pitch
+        target.sendMessage(
+                color("&7Staff: &f") +
+                staff.getName()
         );
     }
 
@@ -775,35 +646,34 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     player.getUniqueId()
             );
 
+            removePunishmentFromFile(
+                    player.getUniqueId()
+            );
+
+            savePunishments();
+
             return;
         }
 
         event.setCancelled(true);
 
         player.sendMessage(
-                PREFIX +
-                ChatColor.RED +
-                "You are muted."
+                prefix +
+                color("&cYou are muted.")
         );
 
         player.sendMessage(
-                ChatColor.GRAY +
-                "Reason: " +
-                ChatColor.WHITE +
+                color("&7Reason: &f") +
                 data.reason
         );
 
         player.sendMessage(
-                ChatColor.GRAY +
-                "Duration: " +
-                ChatColor.WHITE +
+                color("&7Duration: &f") +
                 data.duration
         );
 
         player.sendMessage(
-                ChatColor.GRAY +
-                "Staff: " +
-                ChatColor.WHITE +
+                color("&7Staff: &f") +
                 data.staff
         );
     }
@@ -840,7 +710,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             return;
         }
 
-        if (data.type.equalsIgnoreCase("BAN")) {
+        if (data.type.equalsIgnoreCase("BAN") ||
+                data.type.equalsIgnoreCase("IP-BAN")) {
 
             event.disallow(
                     PlayerLoginEvent.Result.KICK_BANNED,
@@ -859,100 +730,17 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler
-    public void onMove(
-            PlayerMoveEvent event) {
-
-        Player player =
-                event.getPlayer();
-
-        PunishmentData data =
-                punishments.get(
-                        player.getUniqueId()
-                );
-
-        if (data == null) {
-            return;
-        }
-
-        if (!data.type.equalsIgnoreCase("JAIL")) {
-            return;
-        }
-
-        if (data.expires <=
-                System.currentTimeMillis()) {
-            return;
-        }
-
-        Location jail =
-                getJailLocation();
-
-        if (jail == null) {
-            return;
-        }
-
-        if (!player.getWorld()
-                .getName()
-                .equals(
-                        jail.getWorld().getName()
-                )) {
-
-            event.setTo(jail);
-        }
-    }
-
-    @EventHandler
-    public void onTeleport(
-            PlayerTeleportEvent event) {
-
-        Player player =
-                event.getPlayer();
-
-        PunishmentData data =
-                punishments.get(
-                        player.getUniqueId()
-                );
-
-        if (data == null) {
-            return;
-        }
-
-        if (!data.type.equalsIgnoreCase("JAIL")) {
-            return;
-        }
-
-        if (data.expires <=
-                System.currentTimeMillis()) {
-            return;
-        }
-
-        Location jail =
-                getJailLocation();
-
-        if (jail == null) {
-            return;
-        }
-
-        if (!event.getTo()
-                .getWorld()
-                .getName()
-                .equals(
-                        jail.getWorld().getName()
-                )) {
-
-            event.setTo(jail);
-        }
-    }
-
     private void checkExpiredPunishments() {
 
         long now =
                 System.currentTimeMillis();
 
-        for (UUID uuid :
-                new java.util.ArrayList<UUID>(
+        ArrayList<UUID> ids =
+                new ArrayList<UUID>(
                         punishments.keySet()
-                )) {
+                );
+
+        for (UUID uuid : ids) {
 
             PunishmentData data =
                     punishments.get(uuid);
@@ -960,55 +748,11 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             if (data != null &&
                     data.expires <= now) {
 
-                expirePunishment(uuid);
+                punishments.remove(uuid);
+
+                removePunishmentFromFile(uuid);
             }
         }
-    }
-
-    private void expirePunishment(
-            UUID uuid) {
-
-        PunishmentData data =
-                punishments.get(uuid);
-
-        if (data == null) {
-            return;
-        }
-
-        Player player =
-                Bukkit.getPlayer(uuid);
-
-        if (data.type.equalsIgnoreCase("JAIL")) {
-
-            if (player != null) {
-
-                Location old =
-                        previousLocations.remove(uuid);
-
-                if (old != null) {
-                    player.teleport(old);
-                }
-
-                player.sendMessage(
-                        PREFIX +
-                        ChatColor.GREEN +
-                        "Your jail punishment has expired."
-                );
-            }
-        }
-
-        if (player != null) {
-
-            player.sendMessage(
-                    PREFIX +
-                    ChatColor.GREEN +
-                    "Your punishment has expired."
-            );
-        }
-
-        punishments.remove(uuid);
-
-        removePunishmentFromFile(uuid);
 
         savePunishments();
     }
@@ -1018,6 +762,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         if (duration == null ||
                 duration.trim().isEmpty()) {
+
             return 0L;
         }
 
@@ -1251,6 +996,15 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private String color(
+            String text) {
+
+        return ChatColor.translateAlternateColorCodes(
+                '&',
+                text
+        );
     }
 
     private String escapeJson(
