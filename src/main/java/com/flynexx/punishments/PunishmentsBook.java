@@ -30,14 +30,14 @@ import java.util.UUID;
 
 public class PunishmentsBook extends JavaPlugin implements Listener {
 
-    private final Map<UUID, PunishmentData> punishments =
-            new HashMap<UUID, PunishmentData>();
+    private String prefix;
 
     private File dataFile;
 
     private org.bukkit.configuration.file.FileConfiguration dataConfig;
 
-    private String prefix;
+    private final Map<UUID, PunishmentData> activePunishments =
+            new HashMap<UUID, PunishmentData>();
 
     @Override
     public void onEnable() {
@@ -96,12 +96,16 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             String label,
             String[] args) {
 
+        /*
+         * /pm <player>
+         */
         if (command.getName().equalsIgnoreCase("pm")) {
 
             if (!(sender instanceof Player)) {
 
                 sender.sendMessage(
-                        message("messages.errors.players-only")
+                        prefix +
+                        color("&cPlayers only.")
                 );
 
                 return true;
@@ -140,6 +144,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             return true;
         }
 
+        /*
+         * /pmapply <player> <punishment>
+         */
         if (command.getName().equalsIgnoreCase("pmapply")) {
 
             if (!(sender instanceof Player)) {
@@ -170,6 +177,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         return false;
     }
 
+    /*
+     * فتح الكتاب
+     */
     private void openBook(
             Player player,
             String target) {
@@ -180,22 +190,37 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                     createBook(target);
 
             org.bukkit.inventory.ItemStack bukkitBook =
-                    CraftItemStack.asBukkitCopy(book);
+                    CraftItemStack.asBukkitCopy(
+                            book
+                    );
 
             final org.bukkit.inventory.ItemStack oldItem =
                     player.getItemInHand();
 
-            player.setItemInHand(bukkitBook);
+            player.setItemInHand(
+                    bukkitBook
+            );
+
             player.updateInventory();
 
-            EntityPlayer entity =
-                    ((CraftPlayer) player).getHandle();
+            EntityPlayer entityPlayer =
+                    ((CraftPlayer) player)
+                            .getHandle();
 
-            entity.openBook(book);
+            /*
+             * فتح الكتاب الحقيقي للعميل.
+             */
+            entityPlayer.openBook(
+                    book
+            );
 
+            /*
+             * إعادة الآيتم القديم بعد فتح الكتاب.
+             */
             Bukkit.getScheduler().runTaskLater(
                     this,
                     new Runnable() {
+
                         @Override
                         public void run() {
 
@@ -205,6 +230,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
                             player.updateInventory();
                         }
+
                     },
                     5L
             );
@@ -220,11 +246,22 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             player.sendMessage(
                     prefix +
-                    color("&cCould not open punishment book.")
+                    color(
+                            "&cCould not open punishment book."
+                    )
             );
         }
     }
 
+    /*
+     * إنشاء الكتاب التفاعلي.
+     *
+     * المدة لا تظهر في الكتاب.
+     *
+     * الضغط على اسم العقوبة ينفذ:
+     *
+     * /pmapply player punishment
+     */
     private ItemStack createBook(
             String target) {
 
@@ -234,19 +271,27 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 );
 
         ItemStack book =
-                CraftItemStack.asNMSCopy(base);
+                CraftItemStack.asNMSCopy(
+                        base
+                );
 
         NBTTagCompound tag =
                 new NBTTagCompound();
 
         tag.setString(
                 "title",
-                "Punishments"
+                getConfig().getString(
+                        "book.title",
+                        "Punishments"
+                )
         );
 
         tag.setString(
                 "author",
-                "PunishmentsBook"
+                getConfig().getString(
+                        "book.author",
+                        "PunishmentsBook"
+                )
         );
 
         NBTTagList pages =
@@ -282,7 +327,20 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\",\"bold\":true,\"extra\":["
         );
 
-        boolean first = true;
+        boolean first =
+                true;
+
+        String bookColor =
+                getConfig().getString(
+                        "book.color",
+                        "black"
+                );
+
+        String hover =
+                getConfig().getString(
+                        "book.hover",
+                        "Apply Punishment"
+                );
 
         for (String id :
                 section.getKeys(false)) {
@@ -301,7 +359,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             first = false;
 
-            String command =
+            String runCommand =
                     "/pmapply " +
                     target +
                     " " +
@@ -309,7 +367,6 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             /*
              * اسم العقوبة فقط.
-             * المدة لا تظهر داخل الكتاب.
              */
             json.append(
                     "{\"text\":\""
@@ -320,19 +377,41 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             );
 
             json.append(
-                    "\",\"color\":\"black\",\"underlined\":true,"
+                    "\",\"color\":\""
+            );
+
+            json.append(
+                    escapeJson(bookColor)
+            );
+
+            json.append(
+                    "\",\"underlined\":true"
             );
 
             /*
-             * الضغط على العقوبة
-             * ينفذ pmapply مباشرة.
+             * الضغط على العقوبة.
              */
             json.append(
-                    "\"clickEvent\":{\"action\":\"run_command\",\"value\":\""
+                    ",\"clickEvent\":{\"action\":\"run_command\",\"value\":\""
             );
 
             json.append(
-                    escapeJson(command)
+                    escapeJson(runCommand)
+            );
+
+            json.append(
+                    "\"}"
+            );
+
+            /*
+             * Hover اختياري.
+             */
+            json.append(
+                    ",\"hoverEvent\":{\"action\":\"show_text\",\"value\":\""
+            );
+
+            json.append(
+                    escapeJson(hover)
             );
 
             json.append(
@@ -340,17 +419,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             );
 
             json.append(
-                    ",\"hoverEvent\":{\"action\":\"show_text\",\"value\":\""
-            );
-
-            json.append(
-                    escapeJson(
-                            "Apply " + name
-                    )
-            );
-
-            json.append(
-                    "\"}}"
+                    "}"
             );
 
             json.append(
@@ -378,6 +447,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         return book;
     }
 
+    /*
+     * تنفيذ العقوبة.
+     */
     private void applyPunishment(
             Player staff,
             String targetName,
@@ -387,7 +459,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 "punishments." +
                 id;
 
-        if (!getConfig().isConfigurationSection(path)) {
+        if (!getConfig().isConfigurationSection(
+                path
+        )) {
 
             staff.sendMessage(
                     message(
@@ -399,7 +473,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         }
 
         Player target =
-                Bukkit.getPlayerExact(targetName);
+                Bukkit.getPlayerExact(
+                        targetName
+                );
 
         if (target == null) {
 
@@ -418,6 +494,12 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         id
                 );
 
+        String type =
+                getConfig().getString(
+                        path + ".type",
+                        "MUTE"
+                );
+
         String duration =
                 getConfig().getString(
                         path + ".duration",
@@ -430,28 +512,20 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         name
                 );
 
-        String type =
-                getConfig().getString(
-                        path + ".type",
-                        "MUTE"
-                );
-
-        String configuredCommand =
+        /*
+         * الأمر القادم من config.
+         */
+        String command =
                 getConfig().getString(
                         path + ".command",
                         ""
                 );
 
         /*
-         * PunishmentJail:
-         *
-         * command:
-         * jail %player% %duration%
-         *
-         * يتم التنفيذ باسم الإداري نفسه.
+         * استبدال المتغيرات.
          */
-        String command =
-                configuredCommand
+        command =
+                command
                         .replace(
                                 "%player%",
                                 target.getName()
@@ -473,31 +547,54 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                                 staff.getName()
                         );
 
-        boolean commandSuccess = true;
+        if (command.startsWith("/")) {
+            command =
+                    command.substring(1);
+        }
 
+        boolean success =
+                true;
+
+        /*
+         * تنفيذ الأمر من الإداري.
+         *
+         * Hacking:
+         *
+         * /jail Player 3 days Using Hacking
+         *
+         * PunishmentJail هو المسؤول عن السجن.
+         */
         if (!command.trim().isEmpty()) {
 
-            if (command.startsWith("/")) {
-                command =
-                        command.substring(1);
-            }
-
-            commandSuccess =
+            success =
                     Bukkit.dispatchCommand(
                             staff,
                             command
                     );
         }
 
+        if (!success) {
+
+            staff.sendMessage(
+                    message(
+                            "messages.errors.command-failed"
+                    )
+            );
+
+            return;
+        }
+
         /*
-         * MUTE الداخلي.
+         * تخزين MUTE الداخلي.
          */
         if (type.equalsIgnoreCase("MUTE")) {
 
-            long durationMillis =
-                    parseDuration(duration);
+            long millis =
+                    parseDuration(
+                            duration
+                    );
 
-            if (durationMillis > 0L) {
+            if (millis > 0L) {
 
                 PunishmentData data =
                         new PunishmentData();
@@ -525,28 +622,22 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
                 data.expires =
                         System.currentTimeMillis()
-                                + durationMillis;
+                                + millis;
 
-                punishments.put(
-                        target.getUniqueId(),
+                activePunishments.put(
+                        data.uuid,
                         data
                 );
 
-                savePunishment(data);
+                savePunishment(
+                        data
+                );
             }
         }
 
-        if (!commandSuccess) {
-
-            staff.sendMessage(
-                    message(
-                            "messages.errors.command-failed"
-                    )
-            );
-
-            return;
-        }
-
+        /*
+         * رسالة الإداري.
+         */
         sendStaffDetails(
                 staff,
                 target,
@@ -556,6 +647,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 reason
         );
 
+        /*
+         * رسالة اللاعب.
+         */
         sendTargetDetails(
                 target,
                 name,
@@ -566,6 +660,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
     }
 
+    /*
+     * تفاصيل العقوبة للإداري.
+     */
     private void sendStaffDetails(
             Player staff,
             Player target,
@@ -654,13 +751,16 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
     }
 
+    /*
+     * تفاصيل العقوبة للاعب.
+     */
     private void sendTargetDetails(
             Player target,
             String punishment,
             String type,
             String duration,
             String reason,
-            String staffName) {
+            String staff) {
 
         target.sendMessage("");
 
@@ -672,7 +772,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
 
         sendConfigured(
@@ -683,7 +783,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
 
         sendConfigured(
@@ -694,7 +794,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
 
         sendConfigured(
@@ -705,7 +805,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
 
         sendConfigured(
@@ -716,7 +816,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
 
         sendConfigured(
@@ -727,7 +827,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
 
         sendConfigured(
@@ -738,10 +838,13 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 type,
                 duration,
                 reason,
-                staffName
+                staff
         );
     }
 
+    /*
+     * إرسال رسالة من config.
+     */
     private void sendConfigured(
             Player receiver,
             String path,
@@ -795,6 +898,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         );
     }
 
+    /*
+     * MUTE الداخلي.
+     */
     @EventHandler
     public void onChat(
             AsyncPlayerChatEvent event) {
@@ -803,7 +909,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 event.getPlayer();
 
         PunishmentData data =
-                punishments.get(
+                activePunishments.get(
                         player.getUniqueId()
                 );
 
@@ -811,14 +917,16 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             return;
         }
 
-        if (!data.type.equalsIgnoreCase("MUTE")) {
+        if (!data.type.equalsIgnoreCase(
+                "MUTE"
+        )) {
             return;
         }
 
         if (data.expires <=
                 System.currentTimeMillis()) {
 
-            punishments.remove(
+            activePunishments.remove(
                     player.getUniqueId()
             );
 
@@ -835,45 +943,23 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         player.sendMessage(
                 prefix +
-                message(
-                        "messages.mute.message"
+                color(
+                        getConfig().getString(
+                                "messages.mute.message",
+                                "&cYou are muted."
+                        )
                 )
-        );
-
-        sendConfigured(
-                player,
-                "messages.mute.reason",
-                player,
-                data.punishment,
-                data.type,
-                data.duration,
-                data.reason,
-                data.staff
-        );
-
-        sendConfigured(
-                player,
-                "messages.mute.duration",
-                player,
-                data.punishment,
-                data.type,
-                data.duration,
-                data.reason,
-                data.staff
-        );
-
-        sendConfigured(
-                player,
-                "messages.mute.staff",
-                player,
-                data.punishment,
-                data.type,
-                data.duration,
-                data.reason,
-                data.staff
         );
     }
 
+    /*
+     * لا نتدخل في Jail.
+     *
+     * PunishmentJail هو المسؤول عنه.
+     *
+     * هذا الحدث فقط للـ BAN/IP-BAN الداخلي
+     * إذا استخدمت config بدون command.
+     */
     @EventHandler
     public void onLogin(
             PlayerLoginEvent event) {
@@ -882,7 +968,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 event.getPlayer();
 
         PunishmentData data =
-                punishments.get(
+                activePunishments.get(
                         player.getUniqueId()
                 );
 
@@ -893,7 +979,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (data.expires <=
                 System.currentTimeMillis()) {
 
-            punishments.remove(
+            activePunishments.remove(
                     player.getUniqueId()
             );
 
@@ -926,6 +1012,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         }
     }
 
+    /*
+     * انتهاء العقوبات الداخلية.
+     */
     private void checkExpiredPunishments() {
 
         long now =
@@ -933,18 +1022,25 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         ArrayList<UUID> ids =
                 new ArrayList<UUID>(
-                        punishments.keySet()
+                        activePunishments.keySet()
                 );
 
         for (UUID uuid : ids) {
 
             PunishmentData data =
-                    punishments.get(uuid);
+                    activePunishments.get(
+                            uuid
+                    );
 
-            if (data != null &&
-                    data.expires <= now) {
+            if (data == null) {
+                continue;
+            }
 
-                punishments.remove(uuid);
+            if (data.expires <= now) {
+
+                activePunishments.remove(
+                        uuid
+                );
 
                 removePunishmentFromFile(
                         uuid
@@ -955,6 +1051,13 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         savePunishments();
     }
 
+    /*
+     * تحويل:
+     *
+     * 3 days
+     * 4 hours
+     * 7 minutes
+     */
     private long parseDuration(
             String duration) {
 
@@ -981,30 +1084,55 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         long amount;
 
         try {
+
             amount =
-                    Long.parseLong(number);
+                    Long.parseLong(
+                            number
+                    );
+
         } catch (NumberFormatException ex) {
+
             return 0L;
         }
 
         if (value.contains("second")) {
-            return amount * 1000L;
+
+            return amount *
+                    1000L;
         }
 
         if (value.contains("minute")) {
-            return amount * 60L * 1000L;
+
+            return amount *
+                    60L *
+                    1000L;
         }
 
         if (value.contains("hour")) {
-            return amount * 60L * 60L * 1000L;
+
+            return amount *
+                    60L *
+                    60L *
+                    1000L;
         }
 
         if (value.contains("day")) {
-            return amount * 24L * 60L * 60L * 1000L;
+
+            return amount *
+                    24L *
+                    60L *
+                    60L *
+                    1000L;
         }
 
         if (value.contains("week")) {
-            return amount * 7L * 24L * 60L * 60L * 1000L;
+
+            return amount *
+                    7L *
+                    24L *
+                    60L *
+                    60L *
+                    1000L;
         }
 
         return 0L;
@@ -1060,6 +1188,10 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         "\\n"
                 );
     }
+
+    /*
+     * DATA FILE
+     */
 
     private void setupDataFile() {
 
@@ -1170,7 +1302,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 if (data.expires >
                         System.currentTimeMillis()) {
 
-                    punishments.put(
+                    activePunishments.put(
                             data.uuid,
                             data
                     );
@@ -1244,10 +1376,13 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
     private void savePunishments() {
 
         try {
+
             dataConfig.save(
                     dataFile
             );
+
         } catch (IOException ex) {
+
             ex.printStackTrace();
         }
     }
@@ -1255,12 +1390,19 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
     private static class PunishmentData {
 
         private UUID uuid;
+
         private String player;
+
         private String punishment;
+
         private String type;
+
         private String duration;
+
         private String reason;
+
         private String staff;
+
         private long expires;
     }
 }
