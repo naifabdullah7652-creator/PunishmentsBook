@@ -19,11 +19,18 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Clean Maven
-        run: mvn -B clean
+      - name: Show POM
+        run: |
+          echo "===== pom.xml ====="
+          cat pom.xml
+          echo "===== Searching BungeeCord ====="
+          grep -Rni "bungeecord-chat\|bungee" . --exclude-dir=.git || true
+
+      - name: Dependency Tree
+        run: mvn -B dependency:tree
 
       - name: Build
-        run: mvn -B package -Dfile.encoding=UTF-8
+        run: mvn -B clean package -Dfile.encoding=UTF-8
 
       - name: Check JAR
         run: |
