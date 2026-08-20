@@ -1,30 +1,24 @@
 settings:
-  prefix: "&8[&4PunishmentsBook&8] &7┃ "
+  prefix: "&c&lPunishments &7┃ "
 
 messages:
 
   staff:
-    applied: "&aPunishment Applied"
+    applied: "&aPunishment applied successfully."
     player: "&7Player: &f%player%"
-    punishment: "&7Punishment: &f%punishment%"
+    punishment: "&7Punishment: &c%punishment%"
     type: "&7Type: &f%type%"
     duration: "&7Duration: &f%duration%"
     reason: "&7Reason: &f%reason%"
     staff: "&7Staff: &f%staff%"
 
   target:
-    applied: "&cYou have been punished."
+    applied: "&cA punishment has been applied to you."
     player: "&7Player: &f%player%"
-    punishment: "&7Punishment: &f%punishment%"
+    punishment: "&7Punishment: &c%punishment%"
     type: "&7Type: &f%type%"
     duration: "&7Duration: &f%duration%"
     reason: "&7Reason: &f%reason%"
-    staff: "&7Staff: &f%staff%"
-
-  mute:
-    message: "&cYou are muted."
-    reason: "&7Reason: &f%reason%"
-    duration: "&7Duration: &f%duration%"
     staff: "&7Staff: &f%staff%"
 
   errors:
@@ -34,6 +28,16 @@ messages:
     command-failed: "&cPunishment command failed."
     players-only: "&cPlayers only."
 
+book:
+  title: "Punishments"
+  author: "PunishmentsBook"
+
+  show-duration: false
+  show-details: false
+
+  color: "black"
+  hover: "Click to apply punishment"
+
 punishments:
 
   hacking:
@@ -41,7 +45,7 @@ punishments:
     type: "JAIL"
     duration: "3 days"
     reason: "Using Hacking"
-    command: "jail %player% %duration%"
+    command: "jail %player% %duration% %reason%"
 
   spamming:
     name: "Spamming"
