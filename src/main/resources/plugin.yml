@@ -1,0 +1,18 @@
+name: PunishmentsBook
+version: 2.0.0
+main: com.flynexx.punishments.PunishmentsBook
+author: FlyNeXx
+description: Punishment management book for Minecraft 1.8.8
+
+commands:
+  pm:
+    description: Open the punishment book
+    usage: /pm <player>
+    permission: punishmentsbook.use
+
+permissions:
+  punishmentsbook.use:
+    default: op
+
+softdepend:
+  - PunishmentJail
