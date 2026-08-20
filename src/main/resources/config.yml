@@ -1,14 +1,21 @@
 punishments:
+
   fly:
     name: "Fly"
     duration: "3 days"
     reason: "Using Fly"
     command: "jail %player% %duration%"
 
-  kill-aura:
+  killaura:
     name: "KillAura"
     duration: "7 days"
     reason: "Using KillAura"
+    command: "jail %player% %duration%"
+
+  reach:
+    name: "Reach"
+    duration: "3 days"
+    reason: "Using Reach"
     command: "jail %player% %duration%"
 
   spam:
