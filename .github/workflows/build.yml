@@ -19,12 +19,6 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Verify Maven
-        run: mvn -version
-
-      - name: Clean Maven cache
-        run: rm -rf ~/.m2/repository/net/md-5
-
       - name: Build
         run: mvn -U -B clean package -Dfile.encoding=UTF-8
 
