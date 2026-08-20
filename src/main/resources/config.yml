@@ -21,107 +21,101 @@ punishments:
     type: "MUTE"
     duration: "3 hours"
     reason: "Chat Spam"
-    command: "mute %player% 3h Chat Spam"
 
   swearing:
     name: "Swearing"
     type: "MUTE"
     duration: "7 hours"
     reason: "Swearing"
-    command: "mute %player% 7h Swearing"
 
   disrespect:
     name: "Disrespect"
     type: "MUTE"
     duration: "4 hours"
     reason: "Disrespect"
-    command: "mute %player% 4h Disrespect"
 
   advertising:
     name: "Advertising"
     type: "MUTE"
     duration: "14 days"
     reason: "Advertising"
-    command: "mute %player% 14d Advertising"
 
   voice:
     name: "Voice"
     type: "BAN"
     duration: "4 days"
     reason: "Voice violation"
-    command: "ban %player% 4d Voice violation"
 
   flooding:
     name: "Flooding"
     type: "IP-BAN"
     duration: "18 days"
     reason: "Flooding"
-    command: "banip %player% Flooding"
 
 revoke:
 
-  jail-command: "unjail %player%"
+  jail:
+    enabled: true
+    command: "unjail %player%"
 
-  mute-command: "unmute %player%"
+  mute:
+    enabled: true
 
-  ban-command: "pardon %player%"
+  ban:
+    enabled: true
 
-  ip-ban-command: "pardon-ip %ip%"
+  ip-ban:
+    enabled: true
 
   messages:
-
     no-permission: "&cYou don't have permission to revoke punishments."
-
     no-punishment: "&cThis player has no active punishment."
-
     success: "&aPunishment &f%punishment% &afor &f%player% &ahas been revoked."
-
     target: "&aYour punishment has been revoked by &f%staff%&a."
 
 messages:
 
   errors:
-
     no-permission: "&cYou don't have permission."
-
     unknown-punishment: "&cUnknown punishment."
-
     player-not-online: "&cPlayer must be online."
-
     command-failed: "&cPunishment command failed."
-
     players-only: "&cOnly players can use this command."
 
-  muted: "&cYou are currently muted."
+  muted:
+    message: "&cYou are currently muted."
+    reason: "&7Reason: &f%reason%"
+    duration: "&7Duration: &f%duration%"
+    staff: "&7Staff: &f%staff%"
+
+  banned:
+    message: "&cYou are banned."
+    punishment: "&7Punishment: &f%punishment%"
+    reason: "&7Reason: &f%reason%"
+    duration: "&7Duration: &f%duration%"
+    staff: "&7Staff: &f%staff%"
+
+  ip-banned:
+    message: "&cYour IP is banned."
+    punishment: "&7Punishment: &f%punishment%"
+    reason: "&7Reason: &f%reason%"
+    duration: "&7Duration: &f%duration%"
+    staff: "&7Staff: &f%staff%"
 
   staff:
-
     applied: "&aPunishment applied successfully."
-
     player: "&7Player: &f%player%"
-
     punishment: "&7Punishment: &f%punishment%"
-
     type: "&7Type: &f%type%"
-
     duration: "&7Duration: &f%duration%"
-
     reason: "&7Reason: &f%reason%"
-
     staff: "&7Staff: &f%staff%"
 
   target:
-
     applied: "&cYou have been punished."
-
     player: "&7Player: &f%player%"
-
     punishment: "&7Punishment: &f%punishment%"
-
     type: "&7Type: &f%type%"
-
     duration: "&7Duration: &f%duration%"
-
     reason: "&7Reason: &f%reason%"
-
     staff: "&7Staff: &f%staff%"
