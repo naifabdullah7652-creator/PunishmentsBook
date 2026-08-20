@@ -1,56 +1,51 @@
 settings:
+
   book-title: "&4Punishments"
+
   book-author: "FlyNeXx"
 
-  announcement: "&4&lPunishment &8┃ &f%player% &7was punished with &c%punishment% &7for &e%duration%"
+  announcement: "&4&lPunishment &8┃ &f%player% &7was punished with &c%punishment% &7(&e%duration%&7) &8┃ &7Reason: &f%reason%"
 
 punishments:
 
-  "1":
-    name: "&cHacking"
-    description: "&7Fly/KillAura/Reach"
-    type: "JAIL"
+  hacking:
+    name: "&cHacking &7(Fly/KillAura/Reach)"
     duration: "3 days"
-    command: "jail %player% 3d Hacking"
+    reason: "Hacking (Fly/KillAura/Reach)"
+    command: "jail %player% %time% %reason%"
 
-  "2":
-    name: "&cSpamming"
-    description: "&7Spamming"
-    type: "MUTE"
+  spamming:
+    name: "&eSpamming"
     duration: "3 hours"
-    command: "mute %player% 3h Spamming"
+    reason: "Spamming"
+    command: "mute %player% %time% %reason%"
 
-  "3":
+  swearing:
     name: "&cSwearing"
-    description: "&7Swearing"
-    type: "MUTE"
     duration: "7 hours"
-    command: "mute %player% 7h Swearing"
+    reason: "Swearing"
+    command: "mute %player% %time% %reason%"
 
-  "4":
-    name: "&cDisrespect"
-    description: "&7Disrespect"
-    type: "MUTE"
+  disrespect:
+    name: "&6Disrespect"
     duration: "4 hours"
-    command: "mute %player% 4h Disrespect"
+    reason: "Disrespect"
+    command: "mute %player% %time% %reason%"
 
-  "5":
-    name: "&cAdvertising"
-    description: "&7Advertising"
-    type: "MUTE"
+  advertising:
+    name: "&bAdvertising"
     duration: "14 days"
-    command: "mute %player% 14d Advertising"
+    reason: "Advertising"
+    command: "mute %player% %time% %reason%"
 
-  "6":
-    name: "&cVoice Changer/abuse/resonance"
-    description: "&7Voice Changer/abuse/resonance"
-    type: "BAN"
+  voice:
+    name: "&dVoice Changer/abuse/resonance"
     duration: "4 days"
-    command: "ban %player% 4d Voice"
+    reason: "Voice Changer/abuse/resonance"
+    command: "ban %player% %time% %reason%"
 
-  "7":
-    name: "&cFlooding"
-    description: "&7Bot/Ddos/Crashing"
-    type: "BAN-IP"
+  flooding:
+    name: "&4Flooding &7(Bot/Ddos/Crashing)"
     duration: "18 days"
-    command: "banip %player% 18d Flooding"
+    reason: "Flooding (Bot/Ddos/Crashing)"
+    command: "banip %player% %time% %reason%"
