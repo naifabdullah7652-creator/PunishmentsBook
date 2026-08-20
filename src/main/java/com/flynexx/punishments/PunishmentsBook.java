@@ -1,7 +1,6 @@
 package com.flynexx.punishments;
 
 import net.minecraft.server.v1_8_R3.EntityPlayer;
-import net.minecraft.server.v1_8_R3.IChatBaseComponent;
 import net.minecraft.server.v1_8_R3.NBTTagCompound;
 import net.minecraft.server.v1_8_R3.NBTTagList;
 import net.minecraft.server.v1_8_R3.NBTTagString;
@@ -53,9 +52,7 @@ public class PunishmentsBook extends JavaPlugin {
             String[] args) {
 
         /*
-         * =====================================================
          * /pm <player>
-         * =====================================================
          */
         if (command.getName().equalsIgnoreCase("pm")) {
 
@@ -104,9 +101,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * =====================================================
          * /pmapply <player> <punishment>
-         * =====================================================
          */
         if (command.getName()
                 .equalsIgnoreCase("pmapply")) {
@@ -164,9 +159,6 @@ public class PunishmentsBook extends JavaPlugin {
 
         try {
 
-            /*
-             * Build the NMS written book directly.
-             */
             ItemStack nmsBook =
                     createNMSBook(target);
 
@@ -181,46 +173,31 @@ public class PunishmentsBook extends JavaPlugin {
                 return;
             }
 
-            /*
-             * Convert NMS -> Bukkit.
-             */
             org.bukkit.inventory.ItemStack bukkitBook =
                     CraftItemStack.asBukkitCopy(
                             nmsBook
                     );
 
-            /*
-             * Save current held item.
-             */
             final org.bukkit.inventory.ItemStack oldItem =
                     player.getItemInHand();
 
-            /*
-             * Put the actual written book in hand.
-             */
             player.setItemInHand(
                     bukkitBook
             );
 
             player.updateInventory();
 
-            /*
-             * Get NMS player.
-             */
             EntityPlayer entityPlayer =
                     ((CraftPlayer) player)
                             .getHandle();
 
-            /*
-             * Open the book.
-             */
             entityPlayer.openBook(
                     nmsBook
             );
 
             /*
-             * Restore previous item after
-             * the client has opened the book.
+             * Restore the old item after the book
+             * has been sent to the client.
              */
             Bukkit.getScheduler().runTaskLater(
                     this,
@@ -260,38 +237,20 @@ public class PunishmentsBook extends JavaPlugin {
      * =========================================================
      * CREATE NMS BOOK
      * =========================================================
-     *
-     * The important part:
-     *
-     * We do NOT use BookMeta.setPages() here.
-     *
-     * We create the pages directly inside the item's NBT.
-     *
-     * This prevents the JSON from being displayed as ordinary
-     * book text.
      */
     private ItemStack createNMSBook(
             String target) {
 
-        /*
-         * Create an ordinary written book.
-         */
         org.bukkit.inventory.ItemStack base =
                 new org.bukkit.inventory.ItemStack(
                         Material.WRITTEN_BOOK
                 );
 
-        /*
-         * Convert to NMS.
-         */
         ItemStack book =
                 CraftItemStack.asNMSCopy(
                         base
                 );
 
-        /*
-         * Create book NBT.
-         */
         NBTTagCompound tag =
                 new NBTTagCompound();
 
@@ -305,9 +264,6 @@ public class PunishmentsBook extends JavaPlugin {
                 "FlyNeXx"
         );
 
-        /*
-         * Pages list.
-         */
         NBTTagList pages =
                 new NBTTagList();
 
@@ -318,12 +274,12 @@ public class PunishmentsBook extends JavaPlugin {
                         );
 
         /*
-         * No punishments.
+         * No punishments configured.
          */
         if (section == null ||
                 section.getKeys(false).isEmpty()) {
 
-            pages.appendTag(
+            pages.add(
                     new NBTTagString(
                             "Punishments\n\n" +
                             "No punishments configured."
@@ -342,9 +298,6 @@ public class PunishmentsBook extends JavaPlugin {
             return book;
         }
 
-        /*
-         * Build a page at a time.
-         */
         List<String> punishmentIds =
                 new ArrayList<String>(
                         section.getKeys(false)
@@ -354,19 +307,12 @@ public class PunishmentsBook extends JavaPlugin {
                 new StringBuilder();
 
         /*
-         * Page title.
+         * Page starts with a normal title.
          */
         page.append(
-                "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\""
+                "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\",\"extra\":["
         );
 
-        page.append(
-                ",\"extra\":["
-        );
-
-        /*
-         * Header already exists.
-         */
         boolean first =
                 true;
 
@@ -385,25 +331,25 @@ public class PunishmentsBook extends JavaPlugin {
                     );
 
             /*
-             * Command generated by clicking.
+             * Command sent when the player clicks
+             * the punishment.
              */
-            String command =
+            String clickCommand =
                     "/pmapply " +
                     target +
                     " " +
                     id;
 
             if (!first) {
-
-                page.append(
-                        ","
-                );
+                page.append(",");
             }
 
             first = false;
 
             /*
-             * Clickable component.
+             * Punishment name.
+             *
+             * Duration is intentionally NOT included.
              */
             page.append(
                     "{\"text\":\""
@@ -421,12 +367,23 @@ public class PunishmentsBook extends JavaPlugin {
                     ",\"underlined\":true"
             );
 
+            /*
+             * Click event.
+             */
             page.append(
-                    ",\"clickEvent\":{\"action\":\"run_command\",\"value\":\""
+                    ",\"clickEvent\":{"
             );
 
             page.append(
-                    escapeJson(command)
+                    "\"action\":\"run_command\","
+            );
+
+            page.append(
+                    "\"value\":\""
+            );
+
+            page.append(
+                    escapeJson(clickCommand)
             );
 
             page.append(
@@ -447,7 +404,7 @@ public class PunishmentsBook extends JavaPlugin {
             count++;
 
             /*
-             * Ten punishments per page.
+             * Maximum 10 punishments per page.
              */
             if (count >= 10) {
 
@@ -455,29 +412,17 @@ public class PunishmentsBook extends JavaPlugin {
                         "]}"
                 );
 
-                /*
-                 * Store page.
-                 */
-                pages.appendTag(
+                pages.add(
                         new NBTTagString(
-                                normalizePage(
-                                        page.toString()
-                                )
+                                page.toString()
                         )
                 );
 
-                /*
-                 * Start another page.
-                 */
                 page =
                         new StringBuilder();
 
                 page.append(
-                        "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\""
-                );
-
-                page.append(
-                        ",\"extra\":["
+                        "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\",\"extra\":["
                 );
 
                 first =
@@ -497,26 +442,18 @@ public class PunishmentsBook extends JavaPlugin {
                     "]}"
             );
 
-            pages.appendTag(
+            pages.add(
                     new NBTTagString(
-                            normalizePage(
-                                    page.toString()
-                            )
+                            page.toString()
                     )
             );
         }
 
-        /*
-         * Add pages to book.
-         */
         tag.set(
                 "pages",
                 pages
         );
 
-        /*
-         * Apply NBT.
-         */
         book.setTag(
                 tag
         );
@@ -526,24 +463,7 @@ public class PunishmentsBook extends JavaPlugin {
 
     /*
      * =========================================================
-     * NORMALIZE PAGE
-     * =========================================================
-     */
-    private String normalizePage(
-            String page) {
-
-        /*
-         * The first component is already the root.
-         *
-         * Nothing is displayed to the user except the
-         * rendered book contents.
-         */
-        return page;
-    }
-
-    /*
-     * =========================================================
-     * ESCAPE JSON STRING
+     * ESCAPE JSON
      * =========================================================
      */
     private String escapeJson(
@@ -586,9 +506,6 @@ public class PunishmentsBook extends JavaPlugin {
                 "punishments." +
                 id;
 
-        /*
-         * Check punishment.
-         */
         if (!getConfig()
                 .isConfigurationSection(path)) {
 
@@ -601,39 +518,24 @@ public class PunishmentsBook extends JavaPlugin {
             return;
         }
 
-        /*
-         * Name.
-         */
         String name =
                 getConfig().getString(
                         path + ".name",
                         id
                 );
 
-        /*
-         * Duration.
-         *
-         * It is used internally only.
-         * It is NOT displayed in the book.
-         */
         String duration =
                 getConfig().getString(
                         path + ".duration",
                         ""
                 );
 
-        /*
-         * Reason.
-         */
         String reason =
                 getConfig().getString(
                         path + ".reason",
                         name
                 );
 
-        /*
-         * Command.
-         */
         String command =
                 getConfig().getString(
                         path + ".command",
@@ -666,18 +568,12 @@ public class PunishmentsBook extends JavaPlugin {
                                 staff.getName()
                         );
 
-        /*
-         * Remove slash.
-         */
         if (command.startsWith("/")) {
 
             command =
                     command.substring(1);
         }
 
-        /*
-         * No command.
-         */
         if (command.trim().isEmpty()) {
 
             staff.sendMessage(
@@ -690,7 +586,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * Execute as the staff member.
+         * Execute as the administrator.
          *
          * NOT Console.
          */
@@ -699,9 +595,6 @@ public class PunishmentsBook extends JavaPlugin {
                         command
                 );
 
-        /*
-         * Failed.
-         */
         if (!success) {
 
             staff.sendMessage(
@@ -713,9 +606,6 @@ public class PunishmentsBook extends JavaPlugin {
             return;
         }
 
-        /*
-         * Success.
-         */
         staff.sendMessage(
                 PREFIX +
                 ChatColor.GREEN +
