@@ -2,14 +2,15 @@ name: Build PunishmentsBook
 
 on:
   push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -18,41 +19,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
+          cache: maven
 
-      - name: Download Spigot BuildTools
-        run: |
-          wget -O BuildTools.jar \
-            https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-
-      - name: Build Spigot 1.8.8
-        run: |
-          java -jar BuildTools.jar --rev 1.8.8
-
-      - name: Check Spigot
-        run: |
-          ls -lh
-          test -f spigot-1.8.8.jar
-
-      - name: Install Spigot 1.8.8 into Maven
-        run: |
-          mvn install:install-file \
-            -Dfile=spigot-1.8.8.jar \
-            -DgroupId=org.spigotmc \
-            -DartifactId=spigot \
-            -Dversion=1.8.8-R0.1-SNAPSHOT \
-            -Dpackaging=jar
-
-      - name: Build PunishmentsBook
-        run: |
-          mvn -B clean package -Dfile.encoding=UTF-8
-
-      - name: Check Plugin JAR
-        run: |
-          test -f target/PunishmentsBook-2.0.0.jar
-          ls -lh target/PunishmentsBook-2.0.0.jar
+      - name: Build with Maven
+        run: mvn -B clean package -Dfile.encoding=UTF-8
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: PunishmentsBook-2.0.0
           path: target/PunishmentsBook-2.0.0.jar
+          if-no-files-found: error
