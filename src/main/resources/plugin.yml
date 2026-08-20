@@ -18,7 +18,9 @@ commands:
 
 permissions:
   punishmentsbook.use:
+    description: Use the punishment book
     default: op
 
   punishmentsbook.revoke:
+    description: Revoke punishments
     default: op
