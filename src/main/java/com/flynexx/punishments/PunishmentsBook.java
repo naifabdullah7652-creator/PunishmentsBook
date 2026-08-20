@@ -1,14 +1,11 @@
 package com.flynexx.punishments;
 
-import net.minecraft.server.v1_8_R3.EntityPlayer;
-import net.minecraft.server.v1_8_R3.PacketPlayOutSetSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -22,35 +19,49 @@ public class PunishmentsBook extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+
         getLogger().info("PunishmentsBook 2.0.0 enabled.");
     }
 
     @Override
-    public boolean onCommand(CommandSender sender,
-                             Command command,
-                             String label,
-                             String[] args) {
+    public void onDisable() {
+        getLogger().info("PunishmentsBook disabled.");
+    }
+
+    @Override
+    public boolean onCommand(
+            CommandSender sender,
+            Command command,
+            String label,
+            String[] args) {
 
         if (!command.getName().equalsIgnoreCase("pm")) {
             return false;
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Players only.");
+            sender.sendMessage(
+                    ChatColor.RED + "Players only."
+            );
             return true;
         }
 
         if (!sender.hasPermission("punishmentsbook.use")) {
-            sender.sendMessage(ChatColor.RED + "You don't have permission.");
+            sender.sendMessage(
+                    ChatColor.RED + "You don't have permission."
+            );
             return true;
         }
 
         if (args.length != 1) {
-            sender.sendMessage(ChatColor.RED + "Usage: /pm <player>");
+            sender.sendMessage(
+                    ChatColor.RED + "Usage: /pm <player>"
+            );
             return true;
         }
 
         Player player = (Player) sender;
+
         openBook(player, args[0]);
 
         return true;
@@ -58,159 +69,271 @@ public class PunishmentsBook extends JavaPlugin {
 
     private void openBook(Player player, String target) {
 
-        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
-        BookMeta meta = (BookMeta) book.getItemMeta();
+        ItemStack book =
+                new ItemStack(Material.WRITTEN_BOOK);
+
+        BookMeta meta =
+                (BookMeta) book.getItemMeta();
 
         if (meta == null) {
-            player.sendMessage(ChatColor.RED + "Could not create punishment book.");
+            player.sendMessage(
+                    ChatColor.RED +
+                    "Could not create punishment book."
+            );
             return;
         }
 
+        /*
+         * Book title
+         */
         String title = getConfig().getString(
                 "settings.book-title",
                 "&4Punishments"
         );
 
+        /*
+         * Book author
+         */
         String author = getConfig().getString(
                 "settings.book-author",
                 "FlyNeXx"
         );
 
         /*
-         * 1.8.8 supports BookMeta title/author,
-         * so do not use Player.openBook().
+         * 1.8.8 BookMeta supports these methods.
          */
         meta.setTitle(color(title));
         meta.setAuthor(author);
 
-        List<String> pages = new ArrayList<String>();
-        StringBuilder page = new StringBuilder();
+        /*
+         * Pages
+         */
+        List<String> pages =
+                new ArrayList<String>();
 
-        page.append(color("&4&lPUNISHMENTS\n\n"));
+        StringBuilder page =
+                new StringBuilder();
 
-        String playerLine = getConfig().getString(
-                "settings.player-line",
-                "&7Player: &f%player%"
+        /*
+         * Header
+         */
+        page.append(
+                color("&4&lPUNISHMENTS")
         );
-
-        page.append(color(
-                playerLine.replace("%player%", target)
-        ));
 
         page.append("\n\n");
 
+        /*
+         * Player line
+         */
+        String playerLine =
+                getConfig().getString(
+                        "settings.player-line",
+                        "&7Player: &f%player%"
+                );
+
+        playerLine =
+                playerLine.replace(
+                        "%player%",
+                        target
+                );
+
+        page.append(color(playerLine));
+
+        page.append("\n\n");
+
+        /*
+         * Punishments section
+         */
         ConfigurationSection section =
-                getConfig().getConfigurationSection("punishments");
+                getConfig().getConfigurationSection(
+                        "punishments"
+                );
 
         if (section != null) {
 
-            for (String id : section.getKeys(false)) {
+            for (String id :
+                    section.getKeys(false)) {
 
-                String name = getConfig().getString(
-                        "punishments." + id + ".name",
-                        "&cPunishment"
-                );
+                String name =
+                        getConfig().getString(
+                                "punishments." +
+                                id +
+                                ".name",
+                                "&cPunishment"
+                        );
 
-                String duration = getConfig().getString(
-                        "punishments." + id + ".duration",
-                        "Permanent"
-                );
+                String duration =
+                        getConfig().getString(
+                                "punishments." +
+                                id +
+                                ".duration",
+                                "Permanent"
+                        );
 
                 String line =
-                        color("&c» " + name)
+                        color(
+                                "&c» " +
+                                name
+                        )
                         + "\n"
-                        + color("&7Duration: &f" + duration)
+                        + color(
+                                "&7Duration: &f" +
+                                duration
+                        )
                         + "\n\n";
 
                 /*
-                 * Minecraft book page limit.
+                 * Keep the page small enough
+                 * for Minecraft 1.8.8.
                  */
-                if (page.length() + line.length() > 220) {
-                    pages.add(page.toString());
-                    page = new StringBuilder();
+                if (page.length() +
+                        line.length() > 220) {
+
+                    pages.add(
+                            page.toString()
+                    );
+
+                    page =
+                            new StringBuilder();
                 }
 
                 page.append(line);
             }
         }
 
-        if (page.length() == 0) {
-            page.append(color("&7No punishments configured."));
+        /*
+         * No punishments
+         */
+        if (section == null ||
+                section.getKeys(false).isEmpty()) {
+
+            page.append(
+                    color(
+                            "&7No punishments configured."
+                    )
+            );
         }
 
-        pages.add(page.toString());
+        /*
+         * Add final page
+         */
+        if (page.length() > 0) {
+            pages.add(
+                    page.toString()
+            );
+        }
 
+        /*
+         * Apply pages
+         */
         meta.setPages(pages);
+
+        /*
+         * Apply BookMeta
+         */
         book.setItemMeta(meta);
 
         /*
-         * Save the player's current item.
+         * Save current item.
          */
-        ItemStack oldItem = player.getItemInHand();
+        final ItemStack oldItem =
+                player.getItemInHand();
 
         /*
-         * Put the book into the player's hand.
+         * Put book in player's hand.
          */
         player.setItemInHand(book);
+
         player.updateInventory();
 
         /*
-         * Open written book using NMS for 1.8.8.
+         * Try to open the book without
+         * directly depending on NMS.
          */
-        openBookNMS(player);
+        tryOpenBook(player, book);
 
         /*
-         * Restore previous item after opening.
+         * Restore previous item shortly after.
          */
         Bukkit.getScheduler().runTaskLater(
                 this,
                 new Runnable() {
+
                     @Override
                     public void run() {
 
                         if (player.isOnline()) {
-                            player.setItemInHand(oldItem);
+
+                            player.setItemInHand(
+                                    oldItem
+                            );
+
                             player.updateInventory();
                         }
-
                     }
+
                 },
                 2L
         );
     }
 
-    private void openBookNMS(Player player) {
+    /**
+     * Attempts to open the book using
+     * the Bukkit API if available.
+     *
+     * This method intentionally uses
+     * Reflection so the project does not
+     * require CraftBukkit/NMS imports.
+     */
+    private void tryOpenBook(
+            Player player,
+            ItemStack book) {
 
-        EntityPlayer entityPlayer =
-                ((CraftPlayer) player).getHandle();
+        try {
 
-        int slot = player.getInventory().getHeldItemSlot();
+            java.lang.reflect.Method method =
+                    Player.class.getMethod(
+                            "openBook",
+                            ItemStack.class
+                    );
 
-        entityPlayer.playerConnection.sendPacket(
-                new PacketPlayOutSetSlot(
-                        0,
-                        slot,
-                        entityPlayer.inventory.getItem(slot)
-                )
-        );
+            method.invoke(
+                    player,
+                    book
+            );
 
-        /*
-         * 1.8.8 has no Player.openBook().
-         *
-         * The client automatically opens a written book
-         * when the item is changed while using the proper
-         * NMS interaction flow.
-         */
-        entityPlayer.a(
-                entityPlayer.inventory.getItem(slot),
-                org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack
-                        .asNMSCopy(entityPlayer.inventory.getItem(slot)),
-                org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack
-                        .asNMSCopy(entityPlayer.inventory.getItem(slot))
-        );
+        } catch (NoSuchMethodException e) {
+
+            /*
+             * Bukkit 1.8.8 does not expose
+             * Player.openBook().
+             *
+             * The book remains in the player's
+             * hand and the server continues safely.
+             */
+
+        } catch (Exception e) {
+
+            getLogger().warning(
+                    "Could not open punishment book: "
+                    + e.getClass().getSimpleName()
+            );
+        }
     }
 
+    /**
+     * Translate & color codes.
+     */
     private String color(String text) {
-        return ChatColor.translateAlternateColorCodes('&', text);
+
+        if (text == null) {
+            return "";
+        }
+
+        return ChatColor.translateAlternateColorCodes(
+                '&',
+                text
+        );
     }
 }
