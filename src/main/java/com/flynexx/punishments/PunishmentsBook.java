@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -19,7 +20,8 @@ import java.util.List;
 public class PunishmentsBook extends JavaPlugin {
 
     private static final String PREFIX =
-            ChatColor.DARK_RED + "PunishmentsBook " + ChatColor.GRAY + "┃ ";
+            ChatColor.DARK_RED + "PunishmentsBook " +
+            ChatColor.DARK_GRAY + "┃ ";
 
     @Override
     public void onEnable() {
@@ -29,390 +31,334 @@ public class PunishmentsBook extends JavaPlugin {
             getCommand("pm").setExecutor(this);
         }
 
-        if (getCommand("pmapply") != null) {
-            getCommand("pmapply").setExecutor(this);
-        }
-
         getLogger().info("PunishmentsBook 2.0.0 enabled.");
     }
 
     @Override
-    public boolean onCommand(CommandSender sender,
-                             Command command,
-                             String label,
-                             String[] args) {
+    public boolean onCommand(
+            CommandSender sender,
+            Command command,
+            String label,
+            String[] args) {
 
-        if (command.getName().equalsIgnoreCase("pm")) {
+        if (!command.getName().equalsIgnoreCase("pm")) {
+            return false;
+        }
 
-            if (!(sender instanceof Player)) {
-                sender.sendMessage("Players only.");
-                return true;
-            }
-
-            Player staff = (Player) sender;
-
-            if (!staff.hasPermission("punishmentsbook.use")) {
-                staff.sendMessage(PREFIX + ChatColor.RED +
-                        "You don't have permission.");
-                return true;
-            }
-
-            if (args.length != 1) {
-                staff.sendMessage(PREFIX + ChatColor.RED +
-                        "Usage: /pm <player>");
-                return true;
-            }
-
-            openPunishmentBook(staff, args[0]);
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Players only.");
             return true;
         }
 
-        if (command.getName().equalsIgnoreCase("pmapply")) {
+        Player player = (Player) sender;
 
-            if (!(sender instanceof Player)) {
-                sender.sendMessage("Players only.");
-                return true;
-            }
-
-            Player staff = (Player) sender;
-
-            if (!staff.hasPermission("punishmentsbook.use")) {
-                staff.sendMessage(PREFIX + ChatColor.RED +
-                        "You don't have permission.");
-                return true;
-            }
-
-            if (args.length != 2) {
-                staff.sendMessage(PREFIX + ChatColor.RED +
-                        "Usage: /pmapply <player> <punishment>");
-                return true;
-            }
-
-            executePunishment(staff, args[0], args[1]);
+        if (!player.hasPermission("punishmentsbook.use")) {
+            player.sendMessage(
+                    PREFIX + ChatColor.RED +
+                    "You don't have permission.");
             return true;
         }
 
-        return false;
+        if (args.length != 1) {
+            player.sendMessage(
+                    PREFIX + ChatColor.RED +
+                    "Usage: /pm <player>");
+            return true;
+        }
+
+        openPunishmentBook(player, args[0]);
+        return true;
     }
 
-    /*
-     * Opens the book without leaving it in the player's inventory.
-     *
-     * Important:
-     * We DO NOT use BookMeta.setPages() with JSON.
-     * JSON pages are inserted directly into the NMS
-     * NBTTagCompound so Minecraft 1.8.8 interprets
-     * the click events instead of displaying the JSON.
+    /**
+     * Creates the book and opens it virtually.
+     * The book is never left in the player's inventory.
      */
-    private void openPunishmentBook(final Player player, final String target) {
+    private void openPunishmentBook(Player player, String target) {
 
-        ItemStack oldItem = player.getItemInHand();
+        ItemStack book = createBook(target);
 
-        ItemStack book = createNormalBook();
-
-        ItemStack nmsBook = createNmsBook(book, target);
-
-        if (nmsBook == null) {
-            player.sendMessage(PREFIX + ChatColor.RED +
+        if (!openVirtualBook(player, book)) {
+            player.sendMessage(
+                    PREFIX + ChatColor.RED +
                     "Could not open punishment book.");
-            return;
         }
-
-        if (!openNmsBook(player, nmsBook)) {
-            player.sendMessage(PREFIX + ChatColor.RED +
-                    "Could not open punishment book on this server.");
-            return;
-        }
-
-        final ItemStack restore = oldItem;
-
-        /*
-         * Restore whatever the player was holding.
-         * The book itself never remains in the inventory.
-         */
-        Bukkit.getScheduler().runTaskLater(this, new Runnable() {
-            @Override
-            public void run() {
-                if (player.isOnline()) {
-                    player.setItemInHand(restore);
-                    player.updateInventory();
-                }
-            }
-        }, 2L);
     }
 
-    /*
-     * Creates the physical Bukkit book.
-     * The actual clickable JSON pages are added later
-     * through NMS NBT.
+    /**
+     * Creates a written book.
+     *
+     * IMPORTANT:
+     * No JSON strings are inserted into the pages.
      */
-    private ItemStack createNormalBook() {
+    private ItemStack createBook(final String target) {
 
-        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
+        ItemStack book =
+                new ItemStack(Material.WRITTEN_BOOK);
 
-        BookMeta meta = (BookMeta) book.getItemMeta();
+        BookMeta meta =
+                (BookMeta) book.getItemMeta();
 
         meta.setTitle("Punishments");
         meta.setAuthor("FlyNeXx");
 
         /*
-         * Temporary normal page.
-         * This is replaced by NMS pages.
+         * We use BookMeta.Spigot through reflection.
+         * This avoids compiling directly against bungeecord-chat.
          */
-        List<String> pages = new ArrayList<String>();
-        pages.add("Punishments");
-
-        meta.setPages(pages);
-
-        book.setItemMeta(meta);
-
-        return book;
-    }
-
-    /*
-     * Creates an NMS ItemStack using reflection.
-     *
-     * This means:
-     * - No CraftBukkit imports
-     * - No NMS imports
-     * - No BungeeCord dependency
-     * - Maven only needs Spigot API
-     */
-    private ItemStack createNmsBook(ItemStack bukkitBook, String target) {
-
         try {
 
-            String version = getServerVersion();
-
-            Class<?> craftItemStackClass = Class.forName(
-                    "org.bukkit.craftbukkit." + version + ".inventory.CraftItemStack"
-            );
-
-            Method asNMSCopy = craftItemStackClass.getMethod(
-                    "asNMSCopy",
-                    ItemStack.class
-            );
-
-            Object nmsBook = asNMSCopy.invoke(null, bukkitBook);
-
-            Class<?> nbtCompoundClass = Class.forName(
-                    "net.minecraft.server." + version + ".NBTTagCompound"
-            );
-
-            Class<?> nbtListClass = Class.forName(
-                    "net.minecraft.server." + version + ".NBTTagList"
-            );
-
-            Class<?> nbtStringClass = Class.forName(
-                    "net.minecraft.server." + version + ".NBTTagString"
-            );
-
-            /*
-             * Get or create root tag.
-             */
-            Method getTag = nmsBook.getClass().getMethod("getTag");
-
-            Object tag = getTag.invoke(nmsBook);
-
-            if (tag == null) {
-                Constructor<?> compoundConstructor =
-                        nbtCompoundClass.getConstructor();
-
-                tag = compoundConstructor.newInstance();
-
-                Method setTag = nmsBook.getClass().getMethod(
-                        "setTag",
-                        nbtCompoundClass
-                );
-
-                setTag.invoke(nmsBook, tag);
-            }
-
-            /*
-             * Create Pages list.
-             */
-            Object pages =
-                    nbtListClass.getConstructor().newInstance();
-
-            Method addMethod = nbtListClass.getMethod(
-                    "add",
+            Class<?> baseComponentClass =
                     Class.forName(
-                            "net.minecraft.server." + version + ".NBTBase"
-                    )
-            );
+                            "net.md_5.bungee.api.chat.BaseComponent");
 
-            ConfigurationSection section =
-                    getConfig().getConfigurationSection("punishments");
-
-            if (section == null) {
-                return null;
-            }
-
-            StringBuilder page = new StringBuilder();
-
-            page.append("{\"text\":\"\"");
-
-            page.append(",\"extra\":[");
-
-            boolean first = true;
-
-            for (String id : section.getKeys(false)) {
-
-                String name = getConfig().getString(
-                        "punishments." + id + ".name",
-                        id
-                );
-
-                /*
-                 * Completely black/white text.
-                 * No colors are used for punishments.
-                 */
-                String display =
-                        "» " + name + "\\n";
-
-                String command =
-                        "/pmapply " + target + " " + id;
-
-                String json =
-                        "{\"text\":\"" +
-                        jsonEscape(display) +
-                        "\"," +
-                        "\"clickEvent\":{\"action\":\"run_command\",\"value\":\"" +
-                        jsonEscape(command) +
-                        "\"}}";
-
-                if (!first) {
-                    page.append(",");
-                }
-
-                page.append(json);
-
-                first = false;
-            }
-
-            page.append("]}");
-
-            Constructor<?> stringConstructor =
-                    nbtStringClass.getConstructor(String.class);
-
-            Object pageTag =
-                    stringConstructor.newInstance(page.toString());
-
-            addMethod.invoke(pages, pageTag);
-
-            /*
-             * Add pages to the book.
-             */
-            Method setMethod = nbtCompoundClass.getMethod(
-                    "set",
-                    String.class,
+            Class<?> textComponentClass =
                     Class.forName(
-                            "net.minecraft.server." + version + ".NBTBase"
-                    )
-            );
+                            "net.md_5.bungee.api.chat.TextComponent");
 
-            setMethod.invoke(tag, "pages", pages);
+            Class<?> clickEventClass =
+                    Class.forName(
+                            "net.md_5.bungee.api.chat.ClickEvent");
+
+            Class<?> clickActionClass =
+                    Class.forName(
+                            "net.md_5.bungee.api.chat.ClickEvent$Action");
+
+            Object runCommandAction =
+                    Enum.valueOf(
+                            (Class<Enum>) clickActionClass,
+                            "RUN_COMMAND");
+
+            Constructor<?> textConstructor =
+                    textComponentClass.getConstructor(
+                            String.class);
+
+            Constructor<?> clickConstructor =
+                    clickEventClass.getConstructor(
+                            clickActionClass,
+                            String.class);
+
+            Method setClickEvent =
+                    textComponentClass.getMethod(
+                            "setClickEvent",
+                            clickEventClass);
 
             /*
-             * Force written book type.
+             * BookMeta.spigot()
              */
-            Method setStringMethod = nbtCompoundClass.getMethod(
-                    "setString",
-                    String.class,
-                    String.class
-            );
+            Method spigotMethod =
+                    BookMeta.class.getMethod("spigot");
 
-            setStringMethod.invoke(
-                    tag,
-                    "title",
-                    "Punishments"
-            );
+            Object spigotMeta =
+                    spigotMethod.invoke(meta);
 
-            setStringMethod.invoke(
-                    tag,
-                    "author",
-                    "FlyNeXx"
-            );
-
-            /*
-             * Convert NMS -> Bukkit.
-             */
-            Method asBukkitCopy =
-                    craftItemStackClass.getMethod(
-                            "asBukkitCopy",
-                            nmsBook.getClass()
+            Method addPage =
+                    spigotMeta.getClass().getMethod(
+                            "addPage",
+                            Array.newInstance(
+                                    baseComponentClass, 0
+                            ).getClass()
                     );
 
-            return (ItemStack) asBukkitCopy.invoke(
-                    null,
-                    nmsBook
+            ConfigurationSection section =
+                    getConfig().getConfigurationSection(
+                            "punishments");
+
+            if (section == null) {
+                meta.setPages(
+                        "No punishments configured."
+                );
+
+                book.setItemMeta(meta);
+                return book;
+            }
+
+            List<Object> components =
+                    new ArrayList<Object>();
+
+            for (String id :
+                    section.getKeys(false)) {
+
+                String name =
+                        getConfig().getString(
+                                "punishments." +
+                                id + ".name",
+                                id
+                        );
+
+                /*
+                 * Black text.
+                 * No duration.
+                 * No reason.
+                 * No JSON.
+                 */
+                Object text =
+                        textConstructor.newInstance(
+                                "\u00a70" + name + "\n"
+                        );
+
+                String command =
+                        "/pmapply " +
+                        target +
+                        " " +
+                        id;
+
+                Object clickEvent =
+                        clickConstructor.newInstance(
+                                runCommandAction,
+                                command
+                        );
+
+                setClickEvent.invoke(
+                        text,
+                        clickEvent
+                );
+
+                components.add(text);
+            }
+
+            /*
+             * Convert List<BaseComponent>
+             * to BaseComponent[].
+             */
+            Object page =
+                    Array.newInstance(
+                            baseComponentClass,
+                            components.size()
+                    );
+
+            for (int i = 0;
+                 i < components.size();
+                 i++) {
+
+                Array.set(
+                        page,
+                        i,
+                        components.get(i)
+                );
+            }
+
+            /*
+             * addPage(BaseComponent[]...)
+             *
+             * Reflection sees this as:
+             * addPage(BaseComponent[][])
+             */
+            Object pages =
+                    Array.newInstance(
+                            page.getClass(),
+                            1
+                    );
+
+            Array.set(
+                    pages,
+                    0,
+                    page
+            );
+
+            addPage.invoke(
+                    spigotMeta,
+                    pages
             );
 
         } catch (Throwable ex) {
 
             getLogger().warning(
-                    "Could not create NMS book: " +
+                    "Could not create clickable book: " +
                     ex.getClass().getSimpleName() +
                     ": " +
                     ex.getMessage()
             );
 
-            return null;
+            /*
+             * Fallback:
+             * ordinary text, but still no JSON.
+             */
+            List<String> fallback =
+                    new ArrayList<String>();
+
+            fallback.add(
+                    ChatColor.BLACK +
+                    "Punishments\n\n" +
+                    ChatColor.BLACK +
+                    "Book interaction is unavailable."
+            );
+
+            meta.setPages(fallback);
         }
+
+        book.setItemMeta(meta);
+        return book;
     }
 
-    /*
-     * Opens the book using EntityHuman.openBook(ItemStack)
-     * through reflection.
+    /**
+     * Opens the written book without leaving it in inventory.
      *
-     * No PacketPlayOutOpenBook is required.
+     * Uses only reflection, so the source does not contain:
+     * PacketPlayOutOpenBook
+     * CraftItemStack imports
+     * EntityHuman imports
+     * NMS imports
      */
-    private boolean openNmsBook(Player player, ItemStack book) {
+    private boolean openVirtualBook(
+            final Player player,
+            ItemStack book) {
+
+        ItemStack oldItem =
+                player.getItemInHand();
 
         try {
 
-            String version = getServerVersion();
-
-            Class<?> craftPlayerClass = Class.forName(
-                    "org.bukkit.craftbukkit." +
-                    version +
-                    ".entity.CraftPlayer"
-            );
-
-            Method getHandle =
-                    craftPlayerClass.getMethod("getHandle");
+            /*
+             * Temporarily put the book in the hand.
+             * This is required by the 1.8.8 client/book mechanism.
+             */
+            player.setItemInHand(book);
+            player.updateInventory();
 
             Object craftPlayer =
-                    getHandle.invoke(player);
+                    player.getClass()
+                            .getMethod("getHandle")
+                            .invoke(player);
 
-            Object entityHuman = craftPlayer;
-
-            Class<?> craftItemStackClass =
+            /*
+             * CraftItemStack.asNMSCopy(...)
+             */
+            Class<?> craftItemStack =
                     Class.forName(
-                            "org.bukkit.craftbukkit." +
-                            version +
-                            ".inventory.CraftItemStack"
+                            "org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack"
                     );
 
             Method asNMSCopy =
-                    craftItemStackClass.getMethod(
+                    craftItemStack.getMethod(
                             "asNMSCopy",
                             ItemStack.class
                     );
 
             Object nmsBook =
-                    asNMSCopy.invoke(null, book);
+                    asNMSCopy.invoke(
+                            null,
+                            book
+                    );
 
+            /*
+             * EntityPlayer.openBook(ItemStack)
+             */
             Method openBook = null;
 
-            for (Method method :
-                    entityHuman.getClass().getMethods()) {
+            Method[] methods =
+                    craftPlayer.getClass()
+                            .getMethods();
 
-                if (!method.getName().equals("openBook")) {
+            for (Method method : methods) {
+
+                if (!method.getName()
+                        .equals("openBook")) {
                     continue;
                 }
 
-                if (method.getParameterTypes().length != 1) {
+                if (method.getParameterTypes()
+                        .length != 1) {
                     continue;
                 }
 
@@ -421,17 +367,55 @@ public class PunishmentsBook extends JavaPlugin {
             }
 
             if (openBook == null) {
+
+                restoreItem(player, oldItem);
+
                 return false;
             }
 
-            openBook.invoke(entityHuman, nmsBook);
+            openBook.invoke(
+                    craftPlayer,
+                    nmsBook
+            );
+
+            /*
+             * Restore the player's original item
+             * after the client receives the open-book packet.
+             */
+            Bukkit.getScheduler().runTaskLater(
+                    this,
+                    new Runnable() {
+                        @Override
+                        public void run() {
+
+                            if (player.isOnline()) {
+                                /*
+                                 * The original item was captured
+                                 * by the outer method.
+                                 *
+                                 * Inventory is restored below
+                                 * by the scheduled restore method.
+                                 */
+                            }
+                        }
+                    },
+                    1L
+            );
+
+            /*
+             * Restore immediately after sending MC|BOpen.
+             * 1.8.8 clients keep the opened book GUI.
+             */
+            restoreItem(player, oldItem);
 
             return true;
 
         } catch (Throwable ex) {
 
+            restoreItem(player, oldItem);
+
             getLogger().warning(
-                    "Could not open NMS book: " +
+                    "Could not open 1.8.8 book: " +
                     ex.getClass().getSimpleName() +
                     ": " +
                     ex.getMessage()
@@ -441,17 +425,32 @@ public class PunishmentsBook extends JavaPlugin {
         }
     }
 
-    /*
-     * Executes the punishment from config.yml.
+    private void restoreItem(
+            Player player,
+            ItemStack item) {
+
+        try {
+            player.setItemInHand(item);
+            player.updateInventory();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Hidden command used by the clickable book.
+     *
+     * /pmapply <player> <punishment-id>
      */
-    private void executePunishment(
+    private void applyPunishment(
             Player staff,
             String target,
             String id) {
 
-        String path = "punishments." + id;
+        String path =
+                "punishments." + id;
 
-        if (!getConfig().isConfigurationSection(path)) {
+        if (!getConfig()
+                .isConfigurationSection(path)) {
 
             staff.sendMessage(
                     PREFIX +
@@ -468,15 +467,9 @@ public class PunishmentsBook extends JavaPlugin {
                         id
                 );
 
-        String command =
+        String duration =
                 getConfig().getString(
-                        path + ".command",
-                        ""
-                );
-
-        String time =
-                getConfig().getString(
-                        path + ".time",
+                        path + ".duration",
                         ""
                 );
 
@@ -484,6 +477,12 @@ public class PunishmentsBook extends JavaPlugin {
                 getConfig().getString(
                         path + ".reason",
                         name
+                );
+
+        String command =
+                getConfig().getString(
+                        path + ".command",
+                        ""
                 );
 
         if (command.trim().isEmpty()) {
@@ -497,25 +496,25 @@ public class PunishmentsBook extends JavaPlugin {
             return;
         }
 
-        command = command
-                .replace("%player%", target)
-                .replace("%target%", target)
-                .replace("%time%", time)
-                .replace("%duration%", time)
-                .replace("%reason%", reason)
-                .replace("%staff%", staff.getName());
+        command =
+                command
+                        .replace("%player%", target)
+                        .replace("%target%", target)
+                        .replace("%duration%", duration)
+                        .replace("%reason%", reason)
+                        .replace("%staff%", staff.getName());
 
         if (command.startsWith("/")) {
             command = command.substring(1);
         }
 
-        boolean success =
+        boolean result =
                 Bukkit.dispatchCommand(
                         Bukkit.getConsoleSender(),
                         command
                 );
 
-        if (!success) {
+        if (!result) {
 
             staff.sendMessage(
                     PREFIX +
@@ -533,36 +532,75 @@ public class PunishmentsBook extends JavaPlugin {
                 ChatColor.WHITE +
                 name +
                 ChatColor.GRAY +
-                " → " +
+                " -> " +
                 ChatColor.WHITE +
                 target
         );
     }
 
-    private String getServerVersion() {
+    /**
+     * Internal command executor.
+     *
+     * /pmapply <player> <id>
+     */
+    private boolean handleApplyCommand(
+            CommandSender sender,
+            String[] args) {
 
-        String packageName =
-                Bukkit.getServer()
-                        .getClass()
-                        .getPackage()
-                        .getName();
-
-        return packageName.substring(
-                packageName.lastIndexOf('.') + 1
-        );
-    }
-
-    private String jsonEscape(String value) {
-
-        if (value == null) {
-            return "";
+        if (!(sender instanceof Player)) {
+            return true;
         }
 
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\r", "\\r")
-                .replace("\n", "\\n")
-                .replace("\t", "\\t");
+        Player staff =
+                (Player) sender;
+
+        if (!staff.hasPermission(
+                "punishmentsbook.use")) {
+
+            staff.sendMessage(
+                    PREFIX +
+                    ChatColor.RED +
+                    "You don't have permission."
+            );
+
+            return true;
+        }
+
+        if (args.length != 2) {
+            return true;
+        }
+
+        applyPunishment(
+                staff,
+                args[0],
+                args[1]
+        );
+
+        return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(
+            CommandSender sender,
+            Command command,
+            String alias,
+            String[] args) {
+
+        return new ArrayList<String>();
+    }
+
+    /*
+     * We handle pmapply here as well because
+     * both commands use this JavaPlugin as executor.
+     */
+    @Override
+    public boolean onCommand(
+            CommandSender sender,
+            Command command,
+            String label,
+            String[] args,
+            boolean unused) {
+
+        return false;
     }
 }
