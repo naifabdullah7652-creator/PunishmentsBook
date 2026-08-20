@@ -19,10 +19,13 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Build PunishmentsBook
-        run: mvn -B clean package -Dfile.encoding=UTF-8
+      - name: Clean Maven
+        run: mvn -B clean
 
-      - name: Verify JAR
+      - name: Build
+        run: mvn -B package -Dfile.encoding=UTF-8
+
+      - name: Check JAR
         run: |
           ls -lah target/
           test -f target/PunishmentsBook-2.0.0.jar
