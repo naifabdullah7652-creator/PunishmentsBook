@@ -56,44 +56,70 @@ punishments:
     type: "IP-BAN"
     duration: "18 days"
     reason: "Flooding"
-    command: ""
+    command: "banip %player% %reason%"
 
 revoke:
+
   jail-command: "unjail %player%"
+
   mute-command: "unmute %player%"
+
   ban-command: "pardon %player%"
+
   ip-ban-command: "pardon-ip %ip%"
 
   messages:
+
     no-permission: "&cYou don't have permission to revoke punishments."
+
     no-punishment: "&cThis player has no active punishment."
+
     success: "&aPunishment &f%punishment% &afor &f%player% &ahas been revoked."
+
     target: "&aYour punishment has been revoked by &f%staff%&a."
 
 messages:
 
   errors:
+
     no-permission: "&cYou don't have permission."
+
     unknown-punishment: "&cUnknown punishment."
+
     player-not-online: "&cPlayer must be online."
+
     command-failed: "&cPunishment command failed."
 
   muted: "&cYou are currently muted."
 
   staff:
+
     applied: "&aPunishment applied successfully."
+
     player: "&7Player: &f%player%"
+
     punishment: "&7Punishment: &f%punishment%"
+
     type: "&7Type: &f%type%"
+
     duration: "&7Duration: &f%duration%"
+
     reason: "&7Reason: &f%reason%"
+
     staff: "&7Staff: &f%staff%"
 
   target:
+
     applied: "&cYou have been punished."
+
     player: "&7Player: &f%player%"
+
     punishment: "&7Punishment: &f%punishment%"
+
     type: "&7Type: &f%type%"
+
     duration: "&7Duration: &f%duration%"
+
     reason: "&7Reason: &f%reason%"
+
     staff: "&7Staff: &f%staff%"
