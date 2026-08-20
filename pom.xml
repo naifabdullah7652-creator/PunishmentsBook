@@ -12,13 +12,8 @@
     <version>2.0.0</version>
     <packaging>jar</packaging>
 
-    <name>PunishmentsBook</name>
-    <description>Punishment management book for Minecraft 1.8.8</description>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
@@ -41,12 +36,10 @@
             <scope>provided</scope>
 
             <exclusions>
-
                 <exclusion>
                     <groupId>net.md-5</groupId>
                     <artifactId>bungeecord-chat</artifactId>
                 </exclusion>
-
             </exclusions>
 
         </dependency>
@@ -56,15 +49,6 @@
     <build>
 
         <finalName>PunishmentsBook-2.0.0</finalName>
-
-        <resources>
-
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-            </resource>
-
-        </resources>
 
         <plugins>
 
@@ -78,33 +62,12 @@
                     <target>8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
-
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.5.0</version>
-
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
-
+                <version>3.3.0</version>
             </plugin>
 
         </plugins>
