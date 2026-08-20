@@ -9,15 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Check Spigot 1.8.8
-        run: |
-          test -f lib/Spigot-1.8.8.jar
-          echo "Spigot-1.8.8.jar found."
-          ls -lh lib/Spigot-1.8.8.jar
 
       - name: Setup Java 8
         uses: actions/setup-java@v4
@@ -26,9 +19,22 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Build
+      - name: Prepare Spigot 1.8.8
+        run: |
+          mkdir -p lib
+          curl -L --fail \
+            -o lib/Spigot-1.8.8.jar \
+            https://github.com/ValentinOVD/spigot-binaries/raw/master/spigot-1.8.8.jar
+          ls -lh lib/Spigot-1.8.8.jar
+
+      - name: Build PunishmentsBook
         run: |
           mvn -B clean package -Dfile.encoding=UTF-8
+
+      - name: Verify JAR
+        run: |
+          test -f target/PunishmentsBook-2.0.0.jar
+          ls -lh target/PunishmentsBook-2.0.0.jar
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
