@@ -1,40 +1,33 @@
 settings:
-  book-title: "&4Punishments"
+  book-title: "Punishments"
   book-author: "FlyNeXx"
 
 punishments:
 
-  1:
+  hacking:
     name: "Hacking"
-    duration: "3 days"
     command: "jail %player% 3d Hacking"
 
-  2:
+  spamming:
     name: "Spamming"
-    duration: "3 hours"
     command: "mute %player% 3h Spamming"
 
-  3:
+  swearing:
     name: "Swearing"
-    duration: "7 hours"
     command: "mute %player% 7h Swearing"
 
-  4:
+  disrespect:
     name: "Disrespect"
-    duration: "4 hours"
     command: "mute %player% 4h Disrespect"
 
-  5:
+  advertising:
     name: "Advertising"
-    duration: "14 days"
     command: "mute %player% 14d Advertising"
 
-  6:
-    name: "Voice Changer/Abuse/Resonance"
-    duration: "4 days"
-    command: "ban %player% 4d Voice"
+  voice:
+    name: "Voice Changer"
+    command: "ban %player% 4d Voice Changer"
 
-  7:
+  flooding:
     name: "Flooding"
-    duration: "18 days"
     command: "banip %player% 18d Flooding"
