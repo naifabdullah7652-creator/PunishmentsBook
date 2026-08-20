@@ -34,6 +34,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             new HashMap<UUID, PunishmentData>();
 
     private File dataFile;
+
     private org.bukkit.configuration.file.FileConfiguration dataConfig;
 
     private String prefix;
@@ -95,27 +96,27 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             String label,
             String[] args) {
 
-        /*
-         * /pm <player>
-         */
         if (command.getName().equalsIgnoreCase("pm")) {
 
             if (!(sender instanceof Player)) {
+
                 sender.sendMessage(
-                        prefix +
-                        color("&cPlayers only.")
+                        message("messages.errors.players-only")
                 );
+
                 return true;
             }
 
-            Player staff = (Player) sender;
+            Player staff =
+                    (Player) sender;
 
             if (!staff.hasPermission(
                     "punishmentsbook.use")) {
 
                 staff.sendMessage(
-                        prefix +
-                        color("&cYou don't have permission.")
+                        message(
+                                "messages.errors.no-permission"
+                        )
                 );
 
                 return true;
@@ -139,16 +140,14 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             return true;
         }
 
-        /*
-         * /pmapply <player> <punishment>
-         */
         if (command.getName().equalsIgnoreCase("pmapply")) {
 
             if (!(sender instanceof Player)) {
                 return true;
             }
 
-            Player staff = (Player) sender;
+            Player staff =
+                    (Player) sender;
 
             if (!staff.hasPermission(
                     "punishmentsbook.use")) {
@@ -310,7 +309,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             /*
              * اسم العقوبة فقط.
-             * لا يتم عرض المدة داخل الكتاب.
+             * المدة لا تظهر داخل الكتاب.
              */
             json.append(
                     "{\"text\":\""
@@ -325,7 +324,8 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
             );
 
             /*
-             * الضغط ينفذ pmapply مباشرة.
+             * الضغط على العقوبة
+             * ينفذ pmapply مباشرة.
              */
             json.append(
                     "\"clickEvent\":{\"action\":\"run_command\",\"value\":\""
@@ -390,8 +390,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (!getConfig().isConfigurationSection(path)) {
 
             staff.sendMessage(
-                    prefix +
-                    color("&cUnknown punishment.")
+                    message(
+                            "messages.errors.unknown-punishment"
+                    )
             );
 
             return;
@@ -403,8 +404,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (target == null) {
 
             staff.sendMessage(
-                    prefix +
-                    color("&cPlayer is not online.")
+                    message(
+                            "messages.errors.player-not-online"
+                    )
             );
 
             return;
@@ -441,11 +443,12 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                 );
 
         /*
-         * تنفيذ أمر PunishmentJail أو أي نظام
-         * خارجي يتم تحديده من config.yml.
+         * PunishmentJail:
          *
-         * يتم التنفيذ باسم الإداري الذي ضغط،
-         * وليس من Console.
+         * command:
+         * jail %player% %duration%
+         *
+         * يتم التنفيذ باسم الإداري نفسه.
          */
         String command =
                 configuredCommand
@@ -470,14 +473,14 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                                 staff.getName()
                         );
 
-        if (command.startsWith("/")) {
-            command =
-                    command.substring(1);
-        }
-
         boolean commandSuccess = true;
 
         if (!command.trim().isEmpty()) {
+
+            if (command.startsWith("/")) {
+                command =
+                        command.substring(1);
+            }
 
             commandSuccess =
                     Bukkit.dispatchCommand(
@@ -487,7 +490,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         }
 
         /*
-         * MUTE داخلي في PunishmentsBook.
+         * MUTE الداخلي.
          */
         if (type.equalsIgnoreCase("MUTE")) {
 
@@ -509,7 +512,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         name;
 
                 data.type =
-                        "MUTE";
+                        type;
 
                 data.duration =
                         duration;
@@ -536,86 +539,259 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         if (!commandSuccess) {
 
             staff.sendMessage(
-                    prefix +
-                    color("&cPunishment command failed.")
+                    message(
+                            "messages.errors.command-failed"
+                    )
             );
 
             return;
         }
 
-        /*
-         * رسالة الإداري.
-         */
+        sendStaffDetails(
+                staff,
+                target,
+                name,
+                type,
+                duration,
+                reason
+        );
+
+        sendTargetDetails(
+                target,
+                name,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+    }
+
+    private void sendStaffDetails(
+            Player staff,
+            Player target,
+            String punishment,
+            String type,
+            String duration,
+            String reason) {
+
         staff.sendMessage("");
 
-        staff.sendMessage(
-                prefix +
-                color("&aPunishment Applied")
-        );
-
-        staff.sendMessage(
-                color("&7Player: &f") +
-                target.getName()
-        );
-
-        staff.sendMessage(
-                color("&7Punishment: &f") +
-                name
-        );
-
-        staff.sendMessage(
-                color("&7Type: &f") +
-                type
-        );
-
-        staff.sendMessage(
-                color("&7Duration: &f") +
-                duration
-        );
-
-        staff.sendMessage(
-                color("&7Reason: &f") +
-                reason
-        );
-
-        staff.sendMessage(
-                color("&7Staff: &f") +
+        sendConfigured(
+                staff,
+                "messages.staff.applied",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
                 staff.getName()
         );
 
-        /*
-         * رسالة اللاعب.
-         */
+        sendConfigured(
+                staff,
+                "messages.staff.player",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+
+        sendConfigured(
+                staff,
+                "messages.staff.punishment",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+
+        sendConfigured(
+                staff,
+                "messages.staff.type",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+
+        sendConfigured(
+                staff,
+                "messages.staff.duration",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+
+        sendConfigured(
+                staff,
+                "messages.staff.reason",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+
+        sendConfigured(
+                staff,
+                "messages.staff.staff",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staff.getName()
+        );
+    }
+
+    private void sendTargetDetails(
+            Player target,
+            String punishment,
+            String type,
+            String duration,
+            String reason,
+            String staffName) {
+
         target.sendMessage("");
 
-        target.sendMessage(
-                prefix +
-                color("&cYou have been punished.")
+        sendConfigured(
+                target,
+                "messages.target.applied",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
         );
 
-        target.sendMessage(
-                color("&7Punishment: &f") +
-                name
+        sendConfigured(
+                target,
+                "messages.target.player",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
         );
 
-        target.sendMessage(
-                color("&7Type: &f") +
-                type
+        sendConfigured(
+                target,
+                "messages.target.punishment",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
         );
 
-        target.sendMessage(
-                color("&7Duration: &f") +
-                duration
+        sendConfigured(
+                target,
+                "messages.target.type",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
         );
 
-        target.sendMessage(
-                color("&7Reason: &f") +
-                reason
+        sendConfigured(
+                target,
+                "messages.target.duration",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
         );
 
-        target.sendMessage(
-                color("&7Staff: &f") +
-                staff.getName()
+        sendConfigured(
+                target,
+                "messages.target.reason",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
+        );
+
+        sendConfigured(
+                target,
+                "messages.target.staff",
+                target,
+                punishment,
+                type,
+                duration,
+                reason,
+                staffName
+        );
+    }
+
+    private void sendConfigured(
+            Player receiver,
+            String path,
+            Player target,
+            String punishment,
+            String type,
+            String duration,
+            String reason,
+            String staff) {
+
+        String text =
+                getConfig().getString(
+                        path,
+                        ""
+                );
+
+        if (text == null ||
+                text.isEmpty()) {
+            return;
+        }
+
+        text =
+                text
+                        .replace(
+                                "%player%",
+                                target.getName()
+                        )
+                        .replace(
+                                "%punishment%",
+                                punishment
+                        )
+                        .replace(
+                                "%type%",
+                                type
+                        )
+                        .replace(
+                                "%duration%",
+                                duration
+                        )
+                        .replace(
+                                "%reason%",
+                                reason
+                        )
+                        .replace(
+                                "%staff%",
+                                staff
+                        );
+
+        receiver.sendMessage(
+                color(text)
         );
     }
 
@@ -659,21 +835,41 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         player.sendMessage(
                 prefix +
-                color("&cYou are muted.")
+                message(
+                        "messages.mute.message"
+                )
         );
 
-        player.sendMessage(
-                color("&7Reason: &f") +
-                data.reason
+        sendConfigured(
+                player,
+                "messages.mute.reason",
+                player,
+                data.punishment,
+                data.type,
+                data.duration,
+                data.reason,
+                data.staff
         );
 
-        player.sendMessage(
-                color("&7Duration: &f") +
-                data.duration
+        sendConfigured(
+                player,
+                "messages.mute.duration",
+                player,
+                data.punishment,
+                data.type,
+                data.duration,
+                data.reason,
+                data.staff
         );
 
-        player.sendMessage(
-                color("&7Staff: &f") +
+        sendConfigured(
+                player,
+                "messages.mute.staff",
+                player,
+                data.punishment,
+                data.type,
+                data.duration,
+                data.reason,
                 data.staff
         );
     }
@@ -715,17 +911,17 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             event.disallow(
                     PlayerLoginEvent.Result.KICK_BANNED,
-                    ChatColor.RED +
-                    "You are banned.\n\n" +
-                    ChatColor.WHITE +
-                    "Punishment: " +
-                    data.punishment +
-                    "\nReason: " +
-                    data.reason +
-                    "\nDuration: " +
-                    data.duration +
-                    "\nStaff: " +
-                    data.staff
+                    color(
+                            "&cYou are banned.\n\n" +
+                            "&fPunishment: " +
+                            data.punishment +
+                            "\n&fReason: " +
+                            data.reason +
+                            "\n&fDuration: " +
+                            data.duration +
+                            "\n&fStaff: " +
+                            data.staff
+                    )
             );
         }
     }
@@ -750,7 +946,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
                 punishments.remove(uuid);
 
-                removePunishmentFromFile(uuid);
+                removePunishmentFromFile(
+                        uuid
+                );
             }
         }
 
@@ -762,7 +960,6 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         if (duration == null ||
                 duration.trim().isEmpty()) {
-
             return 0L;
         }
 
@@ -813,6 +1010,57 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         return 0L;
     }
 
+    private String message(
+            String path) {
+
+        return prefix +
+                color(
+                        getConfig().getString(
+                                path,
+                                ""
+                        )
+                );
+    }
+
+    private String color(
+            String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return ChatColor.translateAlternateColorCodes(
+                '&',
+                text
+        );
+    }
+
+    private String escapeJson(
+            String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return text
+                .replace(
+                        "\\",
+                        "\\\\"
+                )
+                .replace(
+                        "\"",
+                        "\\\""
+                )
+                .replace(
+                        "\r",
+                        "\\r"
+                )
+                .replace(
+                        "\n",
+                        "\\n"
+                );
+    }
+
     private void setupDataFile() {
 
         if (!getDataFolder().exists()) {
@@ -836,7 +1084,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         dataConfig =
                 org.bukkit.configuration.file.YamlConfiguration
-                        .loadConfiguration(dataFile);
+                        .loadConfiguration(
+                                dataFile
+                        );
     }
 
     private void loadPunishments() {
@@ -872,7 +1122,9 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
                         new PunishmentData();
 
                 data.uuid =
-                        UUID.fromString(uuidString);
+                        UUID.fromString(
+                                uuidString
+                        );
 
                 data.player =
                         dataConfig.getString(
@@ -992,45 +1244,12 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
     private void savePunishments() {
 
         try {
-            dataConfig.save(dataFile);
+            dataConfig.save(
+                    dataFile
+            );
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private String color(
-            String text) {
-
-        return ChatColor.translateAlternateColorCodes(
-                '&',
-                text
-        );
-    }
-
-    private String escapeJson(
-            String text) {
-
-        if (text == null) {
-            return "";
-        }
-
-        return text
-                .replace(
-                        "\\",
-                        "\\\\"
-                )
-                .replace(
-                        "\"",
-                        "\\\""
-                )
-                .replace(
-                        "\r",
-                        "\\r"
-                )
-                .replace(
-                        "\n",
-                        "\\n"
-                );
     }
 
     private static class PunishmentData {
