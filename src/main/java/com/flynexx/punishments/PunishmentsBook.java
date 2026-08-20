@@ -17,9 +17,6 @@ import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class PunishmentsBook extends JavaPlugin {
 
     private static final String PREFIX =
@@ -66,7 +63,8 @@ public class PunishmentsBook extends JavaPlugin {
                 return true;
             }
 
-            Player player = (Player) sender;
+            Player player =
+                    (Player) sender;
 
             if (!player.hasPermission(
                     "punishmentsbook.use")) {
@@ -109,7 +107,8 @@ public class PunishmentsBook extends JavaPlugin {
                 return true;
             }
 
-            Player staff = (Player) sender;
+            Player staff =
+                    (Player) sender;
 
             if (args.length != 2) {
                 return true;
@@ -134,7 +133,7 @@ public class PunishmentsBook extends JavaPlugin {
     }
 
     /*
-     * Creates and opens the interactive book.
+     * Open the interactive book.
      */
     private void openBook(
             Player player,
@@ -156,18 +155,16 @@ public class PunishmentsBook extends JavaPlugin {
                 return;
             }
 
-            /*
-             * Get NMS EntityPlayer.
-             */
             EntityPlayer entityPlayer =
-                    ((CraftPlayer) player).getHandle();
+                    ((CraftPlayer) player)
+                            .getHandle();
 
             /*
-             * Open the written book.
-             *
-             * This is the native 1.8.8 NMS method.
+             * Paper/Spigot 1.8.8
              */
-            entityPlayer.openBook(nmsBook);
+            entityPlayer.openBook(
+                    nmsBook
+            );
 
         } catch (Throwable ex) {
 
@@ -189,32 +186,27 @@ public class PunishmentsBook extends JavaPlugin {
     }
 
     /*
-     * Creates a 1.8.8 NMS written book.
+     * Create the NMS written book.
      *
-     * The pages contain JSON with clickEvent.
+     * The book contains JSON pages.
+     *
+     * Only the punishment NAME is shown.
+     *
+     * Duration is NOT displayed.
      */
     private ItemStack createNmsBook(
             String target) {
 
-        /*
-         * Create Bukkit written book.
-         */
         org.bukkit.inventory.ItemStack bukkitBook =
                 new org.bukkit.inventory.ItemStack(
                         Material.WRITTEN_BOOK
                 );
 
-        /*
-         * Convert to NMS.
-         */
         ItemStack nmsBook =
                 CraftItemStack.asNMSCopy(
                         bukkitBook
                 );
 
-        /*
-         * Root NBT.
-         */
         NBTTagCompound tag =
                 new NBTTagCompound();
 
@@ -234,9 +226,6 @@ public class PunishmentsBook extends JavaPlugin {
                 "FlyNeXx"
         );
 
-        /*
-         * Pages list.
-         */
         NBTTagList pages =
                 new NBTTagList();
 
@@ -252,113 +241,192 @@ public class PunishmentsBook extends JavaPlugin {
         if (section == null ||
                 section.getKeys(false).isEmpty()) {
 
-            String page =
-                    "{\"text\":\"Punishments\\n\\nNo punishments configured.\",\"color\":\"black\"}";
-
             pages.add(
-                    new NBTTagString(page)
+                    new NBTTagString(
+                            "{\"text\":\"Punishments\\n\\nNo punishments configured.\",\"color\":\"black\"}"
+                    )
             );
 
-        } else {
+            tag.set(
+                    "pages",
+                    pages
+            );
+
+            nmsBook.setTag(tag);
+
+            return nmsBook;
+        }
+
+        /*
+         * Start JSON page.
+         */
+        StringBuilder json =
+                new StringBuilder();
+
+        json.append("{");
+
+        json.append(
+                "\"text\":\"\","
+        );
+
+        json.append(
+                "\"extra\":["
+        );
+
+        /*
+         * Header.
+         */
+        json.append(
+                "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\"}"
+        );
+
+        int count = 0;
+
+        for (String id :
+                section.getKeys(false)) {
 
             /*
-             * Keep punishments on pages.
-             *
-             * We use several pages if needed.
+             * Punishment name.
              */
-            List<String> ids =
-                    new ArrayList<String>(
-                            section.getKeys(false)
+            String name =
+                    getConfig().getString(
+                            "punishments." +
+                            id +
+                            ".name",
+                            id
                     );
 
-            StringBuilder page =
-                    new StringBuilder();
+            /*
+             * Command executed by clicking.
+             */
+            String command =
+                    "/pmapply " +
+                    target +
+                    " " +
+                    id;
 
-            page.append(
-                    "{\"text\":\"Punishments\\n\\n\",\"color\":\"black\"}"
+            /*
+             * Comma between JSON objects.
+             */
+            json.append(",");
+
+            /*
+             * Clickable punishment.
+             */
+            json.append("{");
+
+            json.append(
+                    "\"text\":\""
             );
 
-            int lines = 0;
+            json.append(
+                    escapeJson(name)
+            );
 
-            for (String id : ids) {
+            json.append(
+                    "\","
+            );
 
-                String name =
-                        getConfig().getString(
-                                "punishments." +
-                                id +
-                                ".name",
-                                id
-                        );
+            json.append(
+                    "\"color\":\"black\","
+            );
 
-                /*
-                 * Only the NAME is displayed.
-                 *
-                 * Duration is intentionally NOT
-                 * displayed in the book.
-                 */
-                String command =
-                        "/pmapply " +
-                        target +
-                        " " +
-                        id;
+            json.append(
+                    "\"clickEvent\":{"
+            );
 
-                /*
-                 * Add clickable punishment.
-                 */
-                String json =
-                        "{\"text\":\"" +
-                        escapeJson(name) +
-                        "\",\"color\":\"black\"," +
-                        "\"clickEvent\":{\"action\":\"run_command\",\"value\":\"" +
-                        escapeJson(command) +
-                        "\"}}";
+            json.append(
+                    "\"action\":\"run_command\","
+            );
 
-                page.append(json);
+            json.append(
+                    "\"value\":\""
+            );
 
-                page.append(
-                        "{\"text\":\"\\n\",\"color\":\"black\"}"
+            json.append(
+                    escapeJson(command)
+            );
+
+            json.append(
+                    "\""
+            );
+
+            json.append(
+                    "}"
+            );
+
+            json.append(
+                    "}"
+            );
+
+            /*
+             * New line.
+             */
+            json.append(",");
+
+            json.append(
+                    "{\"text\":\"\\n\"}"
+            );
+
+            count++;
+
+            /*
+             * Ten punishments per page.
+             */
+            if (count >= 10) {
+
+                json.append(
+                        "]}"
                 );
-
-                lines++;
-
-                /*
-                 * Minecraft 1.8 book pages are
-                 * small. Split after 10 punishments.
-                 */
-                if (lines >= 10) {
-
-                    pages.add(
-                            new NBTTagString(
-                                    page.toString()
-                            )
-                    );
-
-                    page =
-                            new StringBuilder();
-
-                    page.append(
-                            "{\"text\":\"Punishments\\n\\n\",\"color\":\"black\"}"
-                    );
-
-                    lines = 0;
-                }
-            }
-
-            /*
-             * Add remaining page.
-             */
-            if (lines > 0) {
 
                 pages.add(
                         new NBTTagString(
-                                page.toString()
+                                json.toString()
                         )
                 );
+
+                /*
+                 * New page.
+                 */
+                json =
+                        new StringBuilder();
+
+                json.append("{");
+
+                json.append(
+                        "\"text\":\"\","
+                );
+
+                json.append(
+                        "\"extra\":["
+                );
+
+                json.append(
+                        "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\"}"
+                );
+
+                count = 0;
             }
         }
 
         /*
-         * Add pages to NBT.
+         * Finish final page.
+         */
+        if (count > 0) {
+
+            json.append(
+                    "]}"
+            );
+
+            pages.add(
+                    new NBTTagString(
+                            json.toString()
+                    )
+            );
+        }
+
+        /*
+         * Add pages to book.
          */
         tag.set(
                 "pages",
@@ -366,15 +434,17 @@ public class PunishmentsBook extends JavaPlugin {
         );
 
         /*
-         * Apply NBT to the book.
+         * Apply NBT.
          */
-        nmsBook.setTag(tag);
+        nmsBook.setTag(
+                tag
+        );
 
         return nmsBook;
     }
 
     /*
-     * Escapes text for Minecraft JSON.
+     * Escape text for Minecraft JSON.
      */
     private String escapeJson(
             String text) {
@@ -403,7 +473,7 @@ public class PunishmentsBook extends JavaPlugin {
     }
 
     /*
-     * Executes the configured punishment.
+     * Apply punishment.
      *
      * /pmapply <player> <id>
      */
@@ -417,7 +487,7 @@ public class PunishmentsBook extends JavaPlugin {
                 id;
 
         /*
-         * Check punishment exists.
+         * Check punishment.
          */
         if (!getConfig()
                 .isConfigurationSection(path)) {
@@ -432,7 +502,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * Punishment name.
+         * Name.
          */
         String name =
                 getConfig().getString(
@@ -443,7 +513,7 @@ public class PunishmentsBook extends JavaPlugin {
         /*
          * Duration.
          *
-         * NOT displayed in the book.
+         * It is NOT shown in the book.
          */
         String duration =
                 getConfig().getString(
@@ -461,7 +531,7 @@ public class PunishmentsBook extends JavaPlugin {
                 );
 
         /*
-         * Command.
+         * Configured command.
          */
         String command =
                 getConfig().getString(
@@ -505,7 +575,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * No command configured.
+         * Empty command.
          */
         if (command.trim().isEmpty()) {
 
@@ -519,7 +589,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * Execute as console.
+         * Execute command as console.
          */
         boolean success =
                 Bukkit.dispatchCommand(
@@ -528,7 +598,7 @@ public class PunishmentsBook extends JavaPlugin {
                 );
 
         /*
-         * Failed.
+         * Command failed.
          */
         if (!success) {
 
