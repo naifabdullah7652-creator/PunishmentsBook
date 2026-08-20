@@ -1,23 +1,20 @@
 name: PunishmentsBook
 version: 2.0.0
 main: com.flynexx.punishments.PunishmentsBook
-author: FlyNeXx
+author: Flynexx
 
 commands:
   pm:
-    description: Open the punishments book
+    description: Open punishment book
     usage: /pm <player>
-    permission: punishmentsbook.use
 
   pmapply:
-    description: Apply a punishment
+    description: Apply punishment
     usage: /pmapply <player> <punishment>
-    permission: punishmentsbook.use
 
   pmrevoke:
-    description: Revoke an active punishment
+    description: Revoke punishment
     usage: /pmrevoke <player>
-    permission: punishmentsbook.revoke
 
 permissions:
   punishmentsbook.use:
