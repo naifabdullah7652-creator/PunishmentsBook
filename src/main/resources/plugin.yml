@@ -13,15 +13,7 @@ commands:
     description: Apply a punishment
     usage: /pmapply <player> <punishment>
 
-  pmsetjail:
-    description: Set the jail location
-    usage: /pmsetjail
-
 permissions:
   punishmentsbook.use:
     description: Use PunishmentsBook
-    default: op
-
-  punishmentsbook.setjail:
-    description: Set the jail location
     default: op
