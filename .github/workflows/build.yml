@@ -5,9 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -22,11 +20,18 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Build PunishmentsBook
+      - name: Check Maven configuration
         run: |
-          mvn -B clean package -Dfile.encoding=UTF-8
+          echo "===== POM ====="
+          cat pom.xml
+          echo "===== BUNGEE SEARCH ====="
+          grep -R "bungeecord-chat" -n . || true
 
-      - name: Upload PunishmentsBook JAR
+      - name: Build
+        run: |
+          mvn -U -B clean package -Dfile.encoding=UTF-8
+
+      - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: PunishmentsBook-2.0.0
