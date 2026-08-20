@@ -1,34 +1,43 @@
-settings:
-  book-title: "&4Punishments"
-  book-author: "FlyNeXx"
-  announcement: "&4&lPunishment &8┃ &f%player% &7was punished with &c%punishment% &7(&e%duration%&7)"
-
 punishments:
+
   hacking:
     name: "&cHacking &7(Fly/KillAura/Reach)"
     duration: "3 days"
-    command: "jail %player% 3d Hacking"
+    reason: "Hacking"
+    command: "jail %player% 3d %reason%"
+
   spamming:
-    name: "&cSpamming"
+    name: "&eSpamming"
     duration: "3 hours"
-    command: "mute %player% 3h Spamming"
+    reason: "Spamming"
+    command: "jail %player% 3h %reason%"
+
   swearing:
-    name: "&cSwearing"
+    name: "&eSwearing"
     duration: "7 hours"
-    command: "mute %player% 7h Swearing"
+    reason: "Swearing"
+    command: "jail %player% 7h %reason%"
+
   disrespect:
-    name: "&cDisrespect"
+    name: "&eDisrespect"
     duration: "4 hours"
-    command: "mute %player% 4h Disrespect"
+    reason: "Disrespect"
+    command: "jail %player% 4h %reason%"
+
   advertising:
     name: "&cAdvertising"
     duration: "14 days"
-    command: "mute %player% 14d Advertising"
+    reason: "Advertising"
+    command: "jail %player% 14d %reason%"
+
   voice:
-    name: "&cVoice Changer/Abuse/Resonance"
+    name: "&cVoice (Changer/Abuse/Resonance)"
     duration: "4 days"
-    command: "ban %player% 4d Voice"
+    reason: "Voice"
+    command: "jail %player% 4d %reason%"
+
   flooding:
-    name: "&cFlooding/Bot/DDoS/Crashing"
+    name: "&4Flooding (Bot/Ddos/Crashing)"
     duration: "18 days"
-    command: "banip %player% 18d Flooding"
+    reason: "Flooding"
+    command: "jail %player% 18d %reason%"
