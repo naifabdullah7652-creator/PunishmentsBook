@@ -1,44 +1,22 @@
 settings:
-
   book-title: "&4Punishments"
-
   book-author: "FlyNeXx"
 
   announcement: "&4&lPunishment &8┃ &f%player% &7was punished with &c%punishment% &7(&e%duration%&7)"
 
 punishments:
 
-  hacking:
-    name: "&cHacking"
-    duration: "3 Days"
+  fly:
+    name: "&cFly"
+    duration: "3 days"
     command: "jail %player% 3d"
 
-  advertising:
-    name: "&cAdvertising"
-    duration: "7 Days"
-    command: "mute %player% 7d Advertising"
-
   spam:
-    name: "&cSpamming"
-    duration: "3 Hours"
-    command: "mute %player% 3h Spamming"
+    name: "&eSpamming"
+    duration: "3 hours"
+    command: "mute %player% 3h"
 
-  disrespect:
-    name: "&cDisrespect"
-    duration: "1 Day"
-    command: "mute %player% 1d Disrespect"
-
-  inappropriate:
-    name: "&cInappropriate Content"
-    duration: "7 Days"
-    command: "mute %player% 7d Inappropriate Content"
-
-  threats:
-    name: "&cThreats"
-    duration: "30 Days"
-    command: "ban %player% 30d Threats"
-
-  ban_evasion:
-    name: "&cBan Evasion"
-    duration: "Permanent"
-    command: "ban %player% Ban Evasion"
+  kill_aura:
+    name: "&cKillAura"
+    duration: "7 days"
+    command: "jail %player% 7d"
