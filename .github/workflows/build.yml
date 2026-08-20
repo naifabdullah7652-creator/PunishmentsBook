@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -19,20 +20,18 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Show POM
+      - name: Verify POM
         run: |
-          echo "===== pom.xml ====="
-          cat pom.xml
-          echo "===== Searching BungeeCord ====="
-          grep -Rni "bungeecord-chat\|bungee" . --exclude-dir=.git || true
+          echo "Checking pom.xml..."
+          grep -n "bungeecord" pom.xml || true
 
-      - name: Dependency Tree
-        run: mvn -B dependency:tree
+      - name: Clean
+        run: mvn -B clean
 
       - name: Build
-        run: mvn -B clean package -Dfile.encoding=UTF-8
+        run: mvn -B package -Dfile.encoding=UTF-8
 
-      - name: Check JAR
+      - name: Verify JAR
         run: |
           ls -lah target/
           test -f target/PunishmentsBook-2.0.0.jar
