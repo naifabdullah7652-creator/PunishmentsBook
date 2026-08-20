@@ -5,7 +5,6 @@ author: FlyNeXx
 description: Punishment management book for Minecraft 1.8.8
 
 commands:
-
   pm:
     description: Opens the punishment book
     usage: /pm <player>
@@ -17,7 +16,6 @@ commands:
     permission: punishmentsbook.use
 
 permissions:
-
   punishmentsbook.use:
-    description: Allows access to the punishment book
+    description: Allows access to PunishmentsBook
     default: op
