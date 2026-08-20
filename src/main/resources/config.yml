@@ -4,44 +4,44 @@ settings:
 
 punishments:
 
-  1:
+  hacking:
     name: "Hacking"
-    time: "3d"
+    duration: "3d"
     reason: "Fly/KillAura/Reach"
-    command: "jail %player% %time% %reason%"
+    command: "jail %player% %duration% %reason%"
 
-  2:
+  spamming:
     name: "Spamming"
-    time: "3h"
+    duration: "3h"
     reason: "Spamming"
-    command: "mute %player% %time% %reason%"
+    command: "mute %player% %duration% %reason%"
 
-  3:
+  swearing:
     name: "Swearing"
-    time: "7h"
+    duration: "7h"
     reason: "Swearing"
-    command: "mute %player% %time% %reason%"
+    command: "mute %player% %duration% %reason%"
 
-  4:
+  disrespect:
     name: "Disrespect"
-    time: "4h"
+    duration: "4h"
     reason: "Disrespect"
-    command: "mute %player% %time% %reason%"
+    command: "mute %player% %duration% %reason%"
 
-  5:
+  advertising:
     name: "Advertising"
-    time: "14d"
+    duration: "14d"
     reason: "Advertising"
-    command: "mute %player% %time% %reason%"
+    command: "mute %player% %duration% %reason%"
 
-  6:
-    name: "Voice"
-    time: "4d"
-    reason: "Changer/abuse/resonance"
-    command: "ban %player% %time% %reason%"
+  voice:
+    name: "Voice Changer/Abuse/Resonance"
+    duration: "4d"
+    reason: "Voice Changer/Abuse/Resonance"
+    command: "ban %player% %reason%"
 
-  7:
+  flooding:
     name: "Flooding"
-    time: "18d"
+    duration: "18d"
     reason: "Bot/Ddos/Crashing"
-    command: "ban-ip %player% %time% %reason%"
+    command: "banip %player% %reason%"
