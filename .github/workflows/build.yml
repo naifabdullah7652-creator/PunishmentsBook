@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -18,9 +17,24 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
+          cache: maven
+
+      - name: Check Spigot
+        run: |
+          ls -lah
+          test -f spigot-1.8.8-R0.1-SNAPSHOT.jar
+
+      - name: Install Spigot 1.8.8
+        run: |
+          mvn install:install-file \
+            -Dfile=spigot-1.8.8-R0.1-SNAPSHOT.jar \
+            -DgroupId=org.spigotmc \
+            -DartifactId=spigot \
+            -Dversion=1.8.8-R0.1-SNAPSHOT \
+            -Dpackaging=jar
 
       - name: Build
-        run: mvn -U -B clean package -Dfile.encoding=UTF-8
+        run: mvn -B clean package -Dfile.encoding=UTF-8
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
