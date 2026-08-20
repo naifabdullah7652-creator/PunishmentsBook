@@ -19,25 +19,17 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Check Spigot
-        run: |
-          ls -lah
-          test -f spigot-1.8.8-R0.1-SNAPSHOT.jar
-
-      - name: Install Spigot 1.8.8
-        run: |
-          mvn install:install-file \
-            -Dfile=spigot-1.8.8-R0.1-SNAPSHOT.jar \
-            -DgroupId=org.spigotmc \
-            -DartifactId=spigot \
-            -Dversion=1.8.8-R0.1-SNAPSHOT \
-            -Dpackaging=jar
-
-      - name: Build
+      - name: Build PunishmentsBook
         run: mvn -B clean package -Dfile.encoding=UTF-8
+
+      - name: Verify JAR
+        run: |
+          ls -lah target/
+          test -f target/PunishmentsBook-2.0.0.jar
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: PunishmentsBook-2.0.0
           path: target/PunishmentsBook-2.0.0.jar
+          if-no-files-found: error
