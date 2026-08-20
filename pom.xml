@@ -10,10 +10,8 @@
     <groupId>com.flynexx</groupId>
     <artifactId>PunishmentsBook</artifactId>
     <version>2.0.0</version>
-    <packaging>jar</packaging>
 
-    <name>PunishmentsBook</name>
-    <description>Punishment management book for Minecraft 1.8.8</description>
+    <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,31 +19,8 @@
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
-    <repositories>
-
-        <!-- Spigot snapshots -->
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-
-        <!-- Sonatype snapshots -->
-        <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </repository>
-
-    </repositories>
-
     <dependencies>
 
-        <!--
-            IMPORTANT:
-            spigot-api does NOT contain NMS/CraftBukkit.
-            We need the full Spigot 1.8.8 artifact for:
-            net.minecraft.server.v1_8_R3
-            org.bukkit.craftbukkit.v1_8_R3
-        -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
@@ -71,6 +46,7 @@
                     <target>8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
+
             </plugin>
 
             <plugin>
@@ -85,6 +61,7 @@
                         </manifest>
                     </archive>
                 </configuration>
+
             </plugin>
 
         </plugins>
