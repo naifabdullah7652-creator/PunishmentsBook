@@ -1,20 +1,17 @@
 package com.flynexx.punishments;
 
-import net.minecraft.server.v1_8_R3.EntityHuman;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftHumanEntity;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,14 +23,13 @@ public class PunishmentsBook extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
         saveDefaultConfig();
 
         if (getCommand("pm") != null) {
             getCommand("pm").setExecutor(this);
         }
 
-        getLogger().info("PunishmentsBook 2.0.0 enabled.");
+        getLogger().info("PunishmentsBook enabled.");
     }
 
     @Override
@@ -56,8 +52,7 @@ public class PunishmentsBook extends JavaPlugin {
 
         if (!player.hasPermission("punishmentsbook.use")) {
             player.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
+                    PREFIX + ChatColor.RED +
                     "You don't have permission."
             );
             return true;
@@ -65,86 +60,102 @@ public class PunishmentsBook extends JavaPlugin {
 
         if (args.length != 1) {
             player.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
+                    PREFIX + ChatColor.RED +
                     "Usage: /pm <player>"
             );
             return true;
         }
 
-        openPunishmentBook(player, args[0]);
-
+        openBook(player, args[0]);
         return true;
     }
 
-    /*
-     * Opens the written book without leaving it
-     * permanently inside the player's inventory.
-     */
-    private void openPunishmentBook(
-            Player player,
-            String target) {
+    private void openBook(final Player player, String target) {
 
-        ItemStack oldItem = player.getItemInHand();
-
-        ItemStack book = createBook(target);
+        final ItemStack oldItem = player.getItemInHand();
+        final ItemStack book = createBook(target);
 
         try {
-
-            /*
-             * 1.8.8 requires the book to be in the hand.
-             */
             player.setItemInHand(book);
             player.updateInventory();
 
-            /*
-             * Get the NMS player.
-             */
-            CraftHumanEntity craftPlayer =
-                    (CraftHumanEntity) player;
+            Object craftPlayer = player;
 
-            EntityHuman entityHuman =
-                    craftPlayer.getHandle();
+            Method getHandle =
+                    craftPlayer.getClass().getMethod("getHandle");
 
-            /*
-             * Convert Bukkit ItemStack -> NMS ItemStack.
-             */
-            net.minecraft.server.v1_8_R3.ItemStack nmsBook =
-                    CraftItemStack.asNMSCopy(book);
+            Object entityPlayer =
+                    getHandle.invoke(craftPlayer);
 
-            /*
-             * Correct 1.8.8 method.
-             */
-            entityHuman.openBook(nmsBook);
+            Class<?> craftItemStackClass =
+                    Class.forName(
+                            "org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack"
+                    );
 
-        } catch (Throwable throwable) {
+            Method asNMSCopy =
+                    craftItemStackClass.getMethod(
+                            "asNMSCopy",
+                            ItemStack.class
+                    );
 
-            getLogger().severe(
-                    "Could not open punishment book: "
-                    + throwable.getClass().getSimpleName()
+            Object nmsBook =
+                    asNMSCopy.invoke(null, book);
+
+            Method openBook = null;
+
+            for (Method method :
+                    entityPlayer.getClass().getMethods()) {
+
+                if (!method.getName().equals("openBook")) {
+                    continue;
+                }
+
+                if (method.getParameterTypes().length != 1) {
+                    continue;
+                }
+
+                openBook = method;
+                break;
+            }
+
+            if (openBook == null) {
+                throw new Exception(
+                        "EntityPlayer.openBook not found"
+                );
+            }
+
+            openBook.invoke(entityPlayer, nmsBook);
+
+        } catch (Throwable e) {
+
+            getLogger().warning(
+                    "Could not open book: "
+                    + e.getClass().getSimpleName()
                     + ": "
-                    + throwable.getMessage()
+                    + e.getMessage()
             );
 
             player.sendMessage(
-                    PREFIX +
-                    ChatColor.RED +
+                    PREFIX + ChatColor.RED +
                     "Could not open punishment book."
             );
-
-        } finally {
-
-            /*
-             * Remove temporary book from inventory.
-             */
-            player.setItemInHand(oldItem);
-            player.updateInventory();
         }
+
+        Bukkit.getScheduler().runTaskLater(
+                this,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (player.isOnline()) {
+                            player.setItemInHand(oldItem);
+                            player.updateInventory();
+                        }
+                    }
+                },
+                2L
+        );
     }
 
-    /*
-     * Creates the written book.
-     */
     private ItemStack createBook(String target) {
 
         ItemStack book =
@@ -159,10 +170,7 @@ public class PunishmentsBook extends JavaPlugin {
         List<String> pages =
                 new ArrayList<String>();
 
-        /*
-         * Page 1 = clickable punishments.
-         */
-        pages.add(createClickablePage(target));
+        pages.add(createPage(target));
 
         meta.setPages(pages);
 
@@ -171,18 +179,7 @@ public class PunishmentsBook extends JavaPlugin {
         return book;
     }
 
-    /*
-     * Creates the punishment page.
-     *
-     * The names are:
-     * - Black
-     * - Short
-     * - No duration
-     * - No reason
-     *
-     * Clicking executes the configured command.
-     */
-    private String createClickablePage(String target) {
+    private String createPage(String target) {
 
         ConfigurationSection section =
                 getConfig().getConfigurationSection(
@@ -196,9 +193,7 @@ public class PunishmentsBook extends JavaPlugin {
         StringBuilder json =
                 new StringBuilder();
 
-        json.append("{\"text\":\"\",\"extra\":[");
-
-        boolean first = true;
+        json.append("{\"text\":\"\"");
 
         for (String id : section.getKeys(false)) {
 
@@ -208,9 +203,6 @@ public class PunishmentsBook extends JavaPlugin {
                             id
                     );
 
-            /*
-             * Remove Bukkit color codes.
-             */
             name = ChatColor.stripColor(
                     ChatColor.translateAlternateColorCodes(
                             '&',
@@ -218,9 +210,6 @@ public class PunishmentsBook extends JavaPlugin {
                     )
             );
 
-            /*
-             * Command from config.
-             */
             String command =
                     section.getString(
                             id + ".command",
@@ -244,28 +233,10 @@ public class PunishmentsBook extends JavaPlugin {
                         command.substring(1);
             }
 
-            if (!first) {
-                json.append(",");
-            }
-
-            first = false;
-
-            /*
-             * Escape JSON values.
-             */
-            String safeName =
-                    escapeJson(name);
-
-            String safeCommand =
-                    escapeJson(command);
-
-            /*
-             * Black clickable line.
-             */
-            json.append("{")
+            json.append(",\"extra\":[{")
                     .append("\"text\":\"")
                     .append("\\u2022 ")
-                    .append(safeName)
+                    .append(escape(name))
                     .append("\\n")
                     .append("\",")
 
@@ -274,21 +245,17 @@ public class PunishmentsBook extends JavaPlugin {
                     .append("\"clickEvent\":{")
                     .append("\"action\":\"run_command\",")
                     .append("\"value\":\"/")
-                    .append(safeCommand)
+                    .append(escape(command))
                     .append("\"}")
-
-                    .append("}");
+                    .append("}]");
         }
 
-        json.append("]}");
+        json.append("}");
 
         return json.toString();
     }
 
-    /*
-     * Escape characters that can break JSON.
-     */
-    private String escapeJson(String text) {
+    private String escape(String text) {
 
         if (text == null) {
             return "";
@@ -297,8 +264,8 @@ public class PunishmentsBook extends JavaPlugin {
         return text
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
-                .replace("\r", "")
                 .replace("\n", " ")
+                .replace("\r", " ")
                 .replace("\t", " ");
     }
 }
