@@ -1,32 +1,5 @@
 settings:
-  prefix: "&8[&4PunishmentsBook&8] &7┃ "
-
-messages:
-
-  staff:
-    applied: "&aPunishment applied successfully."
-    player: "&7Player: &f%player%"
-    punishment: "&7Punishment: &c%punishment%"
-    type: "&7Type: &f%type%"
-    duration: "&7Duration: &f%duration%"
-    reason: "&7Reason: &f%reason%"
-    staff: "&7Staff: &f%staff%"
-
-  target:
-    applied: "&cA punishment has been applied to you."
-    player: "&7Player: &f%player%"
-    punishment: "&7Punishment: &c%punishment%"
-    type: "&7Type: &f%type%"
-    duration: "&7Duration: &f%duration%"
-    reason: "&7Reason: &f%reason%"
-    staff: "&7Staff: &f%staff%"
-
-  errors:
-    no-permission: "&cYou don't have permission."
-    player-not-online: "&cPlayer is not online."
-    unknown-punishment: "&cUnknown punishment."
-    command-failed: "&cPunishment command failed."
-    players-only: "&cPlayers only."
+  prefix: "&cPunishments &7┃ "
 
 book:
   title: "Punishments"
@@ -34,71 +7,93 @@ book:
   color: "black"
   hover: "Click to apply punishment"
 
-revoke:
-
-  enabled: true
-
-  # Change this ONLY if PunishmentJail uses another release command.
-  jail-command: "unjail %player%"
-
-  mute-command: "unmute %player%"
-  ban-command: "pardon %player%"
-  ip-ban-command: "pardon-ip %ip%"
-
-  messages:
-    success: "&aPunishment &f%punishment% &ahas been revoked from &f%player%&a."
-    target: "&aYour punishment has been revoked by &f%staff%&a."
-    no-punishment: "&cThis player has no active punishment."
-    player-not-online: "&cPlayer is not online."
-    no-permission: "&cYou don't have permission."
-
 punishments:
 
   hacking:
     name: "Hacking"
     type: "JAIL"
     duration: "3 days"
-    reason: "Using Hacking"
-    command: "jail %player% %duration% %reason%"
+    reason: "Using hacks"
+    command: "jail %player% 3d Using hacks"
 
   spamming:
     name: "Spamming"
     type: "MUTE"
     duration: "3 hours"
     reason: "Chat Spam"
-    command: ""
+    command: "mute %player% %duration% %reason%"
 
   swearing:
     name: "Swearing"
     type: "MUTE"
     duration: "7 hours"
     reason: "Swearing"
-    command: ""
+    command: "mute %player% %duration% %reason%"
 
   disrespect:
     name: "Disrespect"
     type: "MUTE"
     duration: "4 hours"
     reason: "Disrespect"
-    command: ""
+    command: "mute %player% %duration% %reason%"
 
   advertising:
     name: "Advertising"
     type: "MUTE"
     duration: "14 days"
     reason: "Advertising"
-    command: ""
+    command: "mute %player% %duration% %reason%"
 
   voice:
     name: "Voice"
     type: "BAN"
     duration: "4 days"
-    reason: "Voice Violation"
+    reason: "Voice violation"
+    command: "ban %player% %duration% %reason%"
+
+  flooding:
+    name: "Flooding"
+    type: "IP-BAN"
+    duration: "18 days"
+    reason: "Flooding"
     command: ""
 
- flooding:
-  name: "Flooding"
-  type: "IP-BAN"
-  duration: "18 days"
-  reason: "Flooding"
-  command: ""
+revoke:
+  jail-command: "unjail %player%"
+  mute-command: "unmute %player%"
+  ban-command: "pardon %player%"
+  ip-ban-command: "pardon-ip %ip%"
+
+  messages:
+    no-permission: "&cYou don't have permission to revoke punishments."
+    no-punishment: "&cThis player has no active punishment."
+    success: "&aPunishment &f%punishment% &afor &f%player% &ahas been revoked."
+    target: "&aYour punishment has been revoked by &f%staff%&a."
+
+messages:
+
+  errors:
+    no-permission: "&cYou don't have permission."
+    unknown-punishment: "&cUnknown punishment."
+    player-not-online: "&cPlayer must be online."
+    command-failed: "&cPunishment command failed."
+
+  muted: "&cYou are currently muted."
+
+  staff:
+    applied: "&aPunishment applied successfully."
+    player: "&7Player: &f%player%"
+    punishment: "&7Punishment: &f%punishment%"
+    type: "&7Type: &f%type%"
+    duration: "&7Duration: &f%duration%"
+    reason: "&7Reason: &f%reason%"
+    staff: "&7Staff: &f%staff%"
+
+  target:
+    applied: "&cYou have been punished."
+    player: "&7Player: &f%player%"
+    punishment: "&7Punishment: &f%punishment%"
+    type: "&7Type: &f%type%"
+    duration: "&7Duration: &f%duration%"
+    reason: "&7Reason: &f%reason%"
+    staff: "&7Staff: &f%staff%"
