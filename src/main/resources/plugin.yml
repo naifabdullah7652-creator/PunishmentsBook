@@ -1,15 +1,18 @@
-name: PunishmentsBook
-version: 3.0.0
-main: com.flynexx.punishments.PunishmentsBook
-author: FlyNeXx
-
 commands:
   pm:
     description: Open the punishment book
     usage: /pm <player>
 
+  pmdetails:
+    description: Open punishment details
+    usage: /pmdetails <player> <punishment>
+
+  pmapply:
+    description: Apply punishment
+    usage: /pmapply <player> <punishment>
+
   pmsetjail:
-    description: Set the jail location
+    description: Set jail location
     usage: /pmsetjail
 
 permissions:
