@@ -1,5 +1,5 @@
 settings:
-  prefix: "&c&lPunishments &7┃ "
+  prefix: "&8[&4PunishmentsBook&8] &7┃ "
 
 messages:
 
@@ -31,12 +31,26 @@ messages:
 book:
   title: "Punishments"
   author: "PunishmentsBook"
-
-  show-duration: false
-  show-details: false
-
   color: "black"
   hover: "Click to apply punishment"
+
+revoke:
+
+  enabled: true
+
+  # Change this ONLY if PunishmentJail uses another release command.
+  jail-command: "unjail %player%"
+
+  mute-command: "unmute %player%"
+  ban-command: "unban %player%"
+  ip-ban-command: "unban %player%"
+
+  messages:
+    success: "&aPunishment &f%punishment% &ahas been revoked from &f%player%&a."
+    target: "&aYour punishment has been revoked by &f%staff%&a."
+    no-punishment: "&cThis player has no active punishment."
+    player-not-online: "&cPlayer is not online."
+    no-permission: "&cYou don't have permission."
 
 punishments:
 
