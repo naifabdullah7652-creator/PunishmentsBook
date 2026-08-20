@@ -1,24 +1,29 @@
-name: PunishmentsBook
-version: 2.0.0
-main: com.flynexx.punishments.PunishmentsBook
-author: FlyNeXx
-description: Punishment management system for Minecraft 1.8.8
+name: Build PunishmentsBook
 
-depend:
-  - ProtocolLib
+on:
+  push:
+  workflow_dispatch:
 
-commands:
-  pm:
-    description: Opens the punishment menu
-    usage: /pm <player>
-    permission: punishmentsbook.use
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-  pmapply:
-    description: Executes a punishment
-    usage: /pmapply <player> <punishment>
-    permission: punishmentsbook.use
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-permissions:
-  punishmentsbook.use:
-    description: Allows using PunishmentsBook
-    default: op
+      - name: Setup Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Build
+        run: mvn -B clean package -Dfile.encoding=UTF-8
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: PunishmentsBook-2.0.0
+          path: target/PunishmentsBook-2.0.0.jar
