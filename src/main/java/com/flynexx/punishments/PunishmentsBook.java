@@ -21,8 +21,10 @@ import java.util.List;
 public class PunishmentsBook extends JavaPlugin {
 
     private static final String PREFIX =
-            ChatColor.DARK_RED + "PunishmentsBook " +
-            ChatColor.DARK_GRAY + "┃ ";
+            ChatColor.DARK_RED +
+            "PunishmentsBook " +
+            ChatColor.DARK_GRAY +
+            "┃ ";
 
     @Override
     public void onEnable() {
@@ -50,9 +52,7 @@ public class PunishmentsBook extends JavaPlugin {
             String[] args) {
 
         /*
-         * =====================================================
          * /pm <player>
-         * =====================================================
          */
         if (command.getName().equalsIgnoreCase("pm")) {
 
@@ -101,9 +101,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * =====================================================
          * /pmapply <player> <punishment>
-         * =====================================================
          */
         if (command.getName()
                 .equalsIgnoreCase("pmapply")) {
@@ -141,9 +139,6 @@ public class PunishmentsBook extends JavaPlugin {
      * =========================================================
      * OPEN BOOK
      * =========================================================
-     *
-     * Minecraft 1.8.8 requires the written book to actually
-     * exist in the player's hand when openBook() is called.
      */
     private void openBook(
             final Player player,
@@ -152,40 +147,31 @@ public class PunishmentsBook extends JavaPlugin {
         try {
 
             /*
-             * Create the complete Bukkit written book.
+             * Create the actual Bukkit book.
              */
             org.bukkit.inventory.ItemStack book =
-                    createBukkitBook(target);
-
-            if (book == null) {
-
-                player.sendMessage(
-                        PREFIX +
-                        ChatColor.RED +
-                        "Could not create punishment book."
-                );
-
-                return;
-            }
+                    createBook(target);
 
             /*
-             * Save the current item.
+             * Save current item.
              */
             final org.bukkit.inventory.ItemStack oldItem =
                     player.getItemInHand();
 
             /*
-             * Put the written book in the player's hand.
+             * Put the book in the player's hand.
              */
             player.setItemInHand(book);
 
             player.updateInventory();
 
             /*
-             * Convert Bukkit book to NMS.
+             * Convert the book to NMS.
              */
             ItemStack nmsBook =
-                    CraftItemStack.asNMSCopy(book);
+                    CraftItemStack.asNMSCopy(
+                            book
+                    );
 
             /*
              * Get NMS player.
@@ -195,17 +181,14 @@ public class PunishmentsBook extends JavaPlugin {
                             .getHandle();
 
             /*
-             * Open the written book.
+             * Open written book.
              */
             entityPlayer.openBook(
                     nmsBook
             );
 
             /*
-             * Wait two ticks before restoring the old item.
-             *
-             * This gives the client time to receive the
-             * book-open packet and read the book contents.
+             * Wait before restoring the old item.
              */
             Bukkit.getScheduler().runTaskLater(
                     this,
@@ -222,25 +205,14 @@ public class PunishmentsBook extends JavaPlugin {
                         }
 
                     },
-                    2L
+                    5L
             );
 
         } catch (Throwable ex) {
 
             getLogger().severe(
-                    "Failed to open punishment book."
+                    "Could not open punishment book."
             );
-
-            getLogger().severe(
-                    ex.getClass().getName()
-            );
-
-            if (ex.getMessage() != null) {
-
-                getLogger().severe(
-                        ex.getMessage()
-                );
-            }
 
             ex.printStackTrace();
 
@@ -254,43 +226,28 @@ public class PunishmentsBook extends JavaPlugin {
 
     /*
      * =========================================================
-     * CREATE BUKKIT BOOK
+     * CREATE BOOK
      * =========================================================
      */
-    private org.bukkit.inventory.ItemStack createBukkitBook(
+    private org.bukkit.inventory.ItemStack createBook(
             String target) {
 
-        /*
-         * Create written book.
-         */
         org.bukkit.inventory.ItemStack book =
                 new org.bukkit.inventory.ItemStack(
                         Material.WRITTEN_BOOK
                 );
 
-        /*
-         * Get BookMeta.
-         */
         BookMeta meta =
                 (BookMeta) book.getItemMeta();
 
-        /*
-         * Title.
-         */
         meta.setTitle(
                 "Punishments"
         );
 
-        /*
-         * Author.
-         */
         meta.setAuthor(
                 "FlyNeXx"
         );
 
-        /*
-         * Punishments section.
-         */
         ConfigurationSection section =
                 getConfig()
                         .getConfigurationSection(
@@ -298,49 +255,45 @@ public class PunishmentsBook extends JavaPlugin {
                         );
 
         /*
-         * =====================================================
-         * NO PUNISHMENTS
-         * =====================================================
+         * No punishments.
          */
         if (section == null ||
                 section.getKeys(false).isEmpty()) {
 
             meta.setPages(
-                    "{\"text\":\"Punishments\\n\\nNo punishments configured.\",\"color\":\"black\"}"
+                    "Punishments\n\n" +
+                    "No punishments configured."
             );
 
-            book.setItemMeta(
-                    meta
-            );
+            book.setItemMeta(meta);
 
             return book;
         }
 
         /*
-         * =====================================================
-         * CREATE PAGES
-         * =====================================================
+         * Pages.
          */
         List<String> pages =
                 new ArrayList<String>();
 
-        /*
-         * Current page.
-         */
         StringBuilder page =
-                createPageStart();
+                new StringBuilder();
+
+        /*
+         * Page title.
+         */
+        page.append(
+                "Punishments\n\n"
+        );
 
         int count = 0;
 
         /*
-         * Go through punishments.
+         * Read punishments.
          */
         for (String id :
                 section.getKeys(false)) {
 
-            /*
-             * Punishment name.
-             */
             String name =
                     getConfig().getString(
                             "punishments." +
@@ -350,128 +303,44 @@ public class PunishmentsBook extends JavaPlugin {
                     );
 
             /*
-             * Command executed when clicked.
-             */
-            String command =
-                    "/pmapply " +
-                    target +
-                    " " +
-                    id;
-
-            /*
-             * =================================================
-             * CLICKABLE PUNISHMENT
-             * =================================================
-             */
-            page.append(",");
-
-            page.append("{");
-
-            /*
-             * Visible text.
+             * Only show the name.
+             *
+             * Duration is deliberately not shown.
              */
             page.append(
-                    "\"text\":\""
+                    name
             );
 
             page.append(
-                    escapeJson(name)
-            );
-
-            page.append(
-                    "\","
-            );
-
-            /*
-             * Text color.
-             */
-            page.append(
-                    "\"color\":\"black\","
-            );
-
-            /*
-             * Underline makes it obvious that it is clickable.
-             */
-            page.append(
-                    "\"underlined\":true,"
-            );
-
-            /*
-             * Click event.
-             */
-            page.append(
-                    "\"clickEvent\":{"
-            );
-
-            page.append(
-                    "\"action\":\"run_command\","
-            );
-
-            page.append(
-                    "\"value\":\""
-            );
-
-            page.append(
-                    escapeJson(command)
-            );
-
-            page.append(
-                    "\""
-            );
-
-            page.append(
-                    "}"
-            );
-
-            page.append(
-                    "}"
-            );
-
-            /*
-             * New line.
-             */
-            page.append(
-                    ",{\"text\":\"\\n\"}"
+                    "\n"
             );
 
             count++;
 
             /*
-             * Maximum 10 punishments per page.
+             * Ten punishments per page.
              */
             if (count >= 10) {
-
-                /*
-                 * Finish page.
-                 */
-                page.append(
-                        "]}"
-                );
 
                 pages.add(
                         page.toString()
                 );
 
-                /*
-                 * Start next page.
-                 */
                 page =
-                        createPageStart();
+                        new StringBuilder();
+
+                page.append(
+                        "Punishments\n\n"
+                );
 
                 count = 0;
             }
         }
 
         /*
-         * =====================================================
-         * FINAL PAGE
-         * =====================================================
+         * Add last page.
          */
         if (count > 0) {
-
-            page.append(
-                    "]}"
-            );
 
             pages.add(
                     page.toString()
@@ -479,15 +348,12 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * Put pages into BookMeta.
+         * Put pages into the book.
          */
         meta.setPages(
                 pages
         );
 
-        /*
-         * Apply BookMeta.
-         */
         book.setItemMeta(
                 meta
         );
@@ -497,74 +363,10 @@ public class PunishmentsBook extends JavaPlugin {
 
     /*
      * =========================================================
-     * PAGE START
-     * =========================================================
-     */
-    private StringBuilder createPageStart() {
-
-        StringBuilder page =
-                new StringBuilder();
-
-        page.append("{");
-
-        page.append(
-                "\"text\":\"\","
-        );
-
-        page.append(
-                "\"extra\":["
-        );
-
-        /*
-         * Page title.
-         */
-        page.append(
-                "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\"}"
-        );
-
-        return page;
-    }
-
-    /*
-     * =========================================================
-     * JSON ESCAPE
-     * =========================================================
-     */
-    private String escapeJson(
-            String text) {
-
-        if (text == null) {
-            return "";
-        }
-
-        return text
-                .replace(
-                        "\\",
-                        "\\\\"
-                )
-                .replace(
-                        "\"",
-                        "\\\""
-                )
-                .replace(
-                        "\r",
-                        "\\r"
-                )
-                .replace(
-                        "\n",
-                        "\\n"
-                );
-    }
-
-    /*
-     * =========================================================
      * APPLY PUNISHMENT
      * =========================================================
      *
-     * This currently executes the configured command AS THE
-     * STAFF MEMBER instead of Console.
-     *
-     * PunishmentJail remains responsible for jail.
+     * This is kept for the next interactive version.
      */
     private void applyPunishment(
             Player staff,
@@ -575,9 +377,6 @@ public class PunishmentsBook extends JavaPlugin {
                 "punishments." +
                 id;
 
-        /*
-         * Check punishment.
-         */
         if (!getConfig()
                 .isConfigurationSection(path)) {
 
@@ -590,47 +389,30 @@ public class PunishmentsBook extends JavaPlugin {
             return;
         }
 
-        /*
-         * Name.
-         */
         String name =
                 getConfig().getString(
                         path + ".name",
                         id
                 );
 
-        /*
-         * Duration.
-         *
-         * It is NOT displayed in the book.
-         */
         String duration =
                 getConfig().getString(
                         path + ".duration",
                         ""
                 );
 
-        /*
-         * Reason.
-         */
         String reason =
                 getConfig().getString(
                         path + ".reason",
                         name
                 );
 
-        /*
-         * Configured command.
-         */
         String command =
                 getConfig().getString(
                         path + ".command",
                         ""
                 );
 
-        /*
-         * Replace placeholders.
-         */
         command =
                 command
                         .replace(
@@ -654,18 +436,12 @@ public class PunishmentsBook extends JavaPlugin {
                                 staff.getName()
                         );
 
-        /*
-         * Remove leading slash.
-         */
         if (command.startsWith("/")) {
 
             command =
                     command.substring(1);
         }
 
-        /*
-         * No command.
-         */
         if (command.trim().isEmpty()) {
 
             staff.sendMessage(
@@ -678,22 +454,13 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * =====================================================
-         * IMPORTANT
-         * =====================================================
-         *
          * Execute as the administrator.
-         *
-         * NOT Console.
          */
         boolean success =
                 staff.performCommand(
                         command
                 );
 
-        /*
-         * Failed.
-         */
         if (!success) {
 
             staff.sendMessage(
@@ -705,9 +472,6 @@ public class PunishmentsBook extends JavaPlugin {
             return;
         }
 
-        /*
-         * Success.
-         */
         staff.sendMessage(
                 PREFIX +
                 ChatColor.GREEN +
