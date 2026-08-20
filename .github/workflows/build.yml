@@ -6,11 +6,9 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -19,31 +17,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
+          cache: maven
 
-      - name: Download BuildTools
-        run: |
-          wget -O BuildTools.jar \
-          https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-
-      - name: Build Spigot 1.8.8
-        run: |
-          java -jar BuildTools.jar --rev 1.8.8
-
-      - name: Install Spigot locally
-        run: |
-          mvn install:install-file \
-            -Dfile=spigot-1.8.8-R0.1-SNAPSHOT.jar \
-            -DgroupId=org.spigotmc \
-            -DartifactId=spigot \
-            -Dversion=1.8.8-R0.1-SNAPSHOT \
-            -Dpackaging=jar
-
-      - name: Build PunishmentsBook
-        run: |
-          mvn clean package
+      - name: Build
+        run: mvn clean package -B
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
-          name: PunishmentsBook-2.0.0
+          name: PunishmentsBook
           path: target/PunishmentsBook-2.0.0.jar
