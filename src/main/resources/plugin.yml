@@ -2,16 +2,16 @@ name: PunishmentsBook
 version: 2.0.0
 main: com.flynexx.punishments.PunishmentsBook
 author: FlyNeXx
+description: Punishment book for Minecraft 1.8.8
 
 commands:
   pm:
-    description: Open the punishment book
+    description: Opens the punishment book
     usage: /pm <player>
 
   pmapply:
-    description: Internal punishment command
+    description: Executes a punishment
     usage: /pmapply <player> <punishment>
-    permission: punishmentsbook.use
 
 permissions:
   punishmentsbook.use:
