@@ -42,8 +42,8 @@ revoke:
   jail-command: "unjail %player%"
 
   mute-command: "unmute %player%"
-  ban-command: "unban %player%"
-  ip-ban-command: "unban %player%"
+  ban-command: "pardon %player%"
+  ip-ban-command: "pardon-ip %ip%"
 
   messages:
     success: "&aPunishment &f%punishment% &ahas been revoked from &f%player%&a."
