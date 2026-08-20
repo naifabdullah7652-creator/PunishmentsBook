@@ -5,13 +5,14 @@ author: FlyNeXx
 
 commands:
   pm:
-    description: Give the punishment book
+    description: Open punishment book
     usage: /pm <player>
 
   pmapply:
-    description: Execute a punishment from the punishment book
+    description: Execute punishment
     usage: /pmapply <player> <punishment>
 
 permissions:
   punishmentsbook.use:
+    description: Use PunishmentsBook
     default: op
