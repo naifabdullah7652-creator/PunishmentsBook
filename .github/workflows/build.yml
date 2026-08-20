@@ -5,7 +5,9 @@ on:
   workflow_dispatch:
 
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -20,25 +22,12 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Verify POM
+      - name: Build PunishmentsBook
         run: |
-          echo "Checking pom.xml..."
-          grep -n "bungeecord" pom.xml || true
+          mvn -B clean package -Dfile.encoding=UTF-8
 
-      - name: Clean
-        run: mvn -B clean
-
-      - name: Build
-        run: mvn -B package -Dfile.encoding=UTF-8
-
-      - name: Verify JAR
-        run: |
-          ls -lah target/
-          test -f target/PunishmentsBook-2.0.0.jar
-
-      - name: Upload JAR
+      - name: Upload PunishmentsBook JAR
         uses: actions/upload-artifact@v4
         with:
           name: PunishmentsBook-2.0.0
           path: target/PunishmentsBook-2.0.0.jar
-          if-no-files-found: error
