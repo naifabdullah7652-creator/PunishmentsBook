@@ -1,58 +1,23 @@
 name: Build PunishmentsBook
-
 on:
   push:
   workflow_dispatch:
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Java 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
           cache: maven
-
-      - name: Cache Spigot BuildTools
-        uses: actions/cache@v4
-        id: spigot-cache
-        with:
-          path: ~/.m2/repository
-          key: spigot-1.8.8-${{ runner.os }}-v1
-
-      - name: Download BuildTools
-        if: steps.spigot-cache.outputs.cache-hit != 'true'
-        run: |
-          wget -O BuildTools.jar \
-            https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-
-      - name: Build Spigot 1.8.8
-        if: steps.spigot-cache.outputs.cache-hit != 'true'
-        run: |
-          java -jar BuildTools.jar --rev 1.8.8
-
-      - name: Verify Spigot NMS
-        run: |
-          test -f ~/.m2/repository/org/spigotmc/spigot/1.8.8-R0.1-SNAPSHOT/spigot-1.8.8-R0.1-SNAPSHOT.jar
-          echo "Spigot 1.8.8 NMS dependency found."
-
-      - name: Build PunishmentsBook
-        run: |
-          mvn -B clean package \
-            -Dfile.encoding=UTF-8 \
-            -Dmaven.compiler.encoding=UTF-8
-
+      - name: Build
+        run: mvn -B clean package -Dfile.encoding=UTF-8
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: PunishmentsBook-2.0.0
           path: target/PunishmentsBook-2.0.0.jar
-          if-no-files-found: error
