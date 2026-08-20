@@ -1,51 +1,56 @@
 settings:
-
   book-title: "&4Punishments"
-
   book-author: "FlyNeXx"
 
-  announcement: "&4&lPunishment &8┃ &f%player% &7was punished with &c%punishment% &7(&e%duration%&7)"
+  announcement: "&4&lPunishment &8┃ &f%player% &7was punished with &c%punishment% &7for &e%duration%"
 
 punishments:
 
   "1":
-    name: "&cHacking &7(Fly/KillAura/Reach)"
+    name: "&cHacking"
+    description: "&7Fly/KillAura/Reach"
+    type: "JAIL"
     duration: "3 days"
-    reason: "Hacking (Fly/KillAura/Reach)"
-    command: "jail %player% 3d %reason%"
+    command: "jail %player% 3d Hacking"
 
   "2":
     name: "&cSpamming"
+    description: "&7Spamming"
+    type: "MUTE"
     duration: "3 hours"
-    reason: "Spamming"
-    command: "mute %player% 3h %reason%"
+    command: "mute %player% 3h Spamming"
 
   "3":
     name: "&cSwearing"
+    description: "&7Swearing"
+    type: "MUTE"
     duration: "7 hours"
-    reason: "Swearing"
-    command: "mute %player% 7h %reason%"
+    command: "mute %player% 7h Swearing"
 
   "4":
     name: "&cDisrespect"
+    description: "&7Disrespect"
+    type: "MUTE"
     duration: "4 hours"
-    reason: "Disrespect"
-    command: "mute %player% 4h %reason%"
+    command: "mute %player% 4h Disrespect"
 
   "5":
     name: "&cAdvertising"
+    description: "&7Advertising"
+    type: "MUTE"
     duration: "14 days"
-    reason: "Advertising"
-    command: "mute %player% 14d %reason%"
+    command: "mute %player% 14d Advertising"
 
   "6":
-    name: "&cVoice Changer/Abuse/Resonance"
+    name: "&cVoice Changer/abuse/resonance"
+    description: "&7Voice Changer/abuse/resonance"
+    type: "BAN"
     duration: "4 days"
-    reason: "Voice Changer/Abuse/Resonance"
-    command: "ban %player% 4d %reason%"
+    command: "ban %player% 4d Voice"
 
   "7":
-    name: "&cFlooding/Bot/Ddos/Crashing"
+    name: "&cFlooding"
+    description: "&7Bot/Ddos/Crashing"
+    type: "BAN-IP"
     duration: "18 days"
-    reason: "Flooding/Bot/Ddos/Crashing"
-    command: "banip %player% 18d %reason%"
+    command: "banip %player% 18d Flooding"
