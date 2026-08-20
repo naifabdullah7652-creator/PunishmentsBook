@@ -2,8 +2,6 @@ name: Build PunishmentsBook
 
 on:
   push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -21,15 +19,17 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Clean Maven
-        run: mvn clean
+      - name: Verify Maven
+        run: mvn -version
+
+      - name: Clean Maven cache
+        run: rm -rf ~/.m2/repository/net/md-5
 
       - name: Build
-        run: mvn -B package -Dfile.encoding=UTF-8
+        run: mvn -U -B clean package -Dfile.encoding=UTF-8
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: PunishmentsBook-2.0.0
           path: target/PunishmentsBook-2.0.0.jar
-          if-no-files-found: error
