@@ -17,10 +17,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
-          cache: maven
+
+      - name: Show POM
+        run: cat pom.xml
+
+      - name: Check dependencies
+        run: mvn dependency:tree -Dverbose
 
       - name: Build
-        run: mvn -B clean package -Dfile.encoding=UTF-8
+        run: mvn -U -B clean package -Dfile.encoding=UTF-8
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
