@@ -1,47 +1,18 @@
-settings:
-  book-title: "Punishments"
-  book-author: "FlyNeXx"
-
 punishments:
+  fly:
+    name: "Fly"
+    duration: "3 days"
+    reason: "Using Fly"
+    command: "jail %player% %duration%"
 
-  hacking:
-    name: "Hacking"
-    duration: "3d"
-    reason: "Fly/KillAura/Reach"
-    command: "jail %player% %duration% %reason%"
+  kill-aura:
+    name: "KillAura"
+    duration: "7 days"
+    reason: "Using KillAura"
+    command: "jail %player% %duration%"
 
-  spamming:
+  spam:
     name: "Spamming"
-    duration: "3h"
-    reason: "Spamming"
-    command: "mute %player% %duration% %reason%"
-
-  swearing:
-    name: "Swearing"
-    duration: "7h"
-    reason: "Swearing"
-    command: "mute %player% %duration% %reason%"
-
-  disrespect:
-    name: "Disrespect"
-    duration: "4h"
-    reason: "Disrespect"
-    command: "mute %player% %duration% %reason%"
-
-  advertising:
-    name: "Advertising"
-    duration: "14d"
-    reason: "Advertising"
-    command: "mute %player% %duration% %reason%"
-
-  voice:
-    name: "Voice Changer/Abuse/Resonance"
-    duration: "4d"
-    reason: "Voice Changer/Abuse/Resonance"
-    command: "ban %player% %reason%"
-
-  flooding:
-    name: "Flooding"
-    duration: "18d"
-    reason: "Bot/Ddos/Crashing"
-    command: "banip %player% %reason%"
+    duration: "3 hours"
+    reason: "Chat Spam"
+    command: "mute %player% %duration%"
