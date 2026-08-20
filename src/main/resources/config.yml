@@ -21,42 +21,42 @@ punishments:
     type: "MUTE"
     duration: "3 hours"
     reason: "Chat Spam"
-    command: "mute %player% %duration% %reason%"
+    command: "mute %player% 3h Chat Spam"
 
   swearing:
     name: "Swearing"
     type: "MUTE"
     duration: "7 hours"
     reason: "Swearing"
-    command: "mute %player% %duration% %reason%"
+    command: "mute %player% 7h Swearing"
 
   disrespect:
     name: "Disrespect"
     type: "MUTE"
     duration: "4 hours"
     reason: "Disrespect"
-    command: "mute %player% %duration% %reason%"
+    command: "mute %player% 4h Disrespect"
 
   advertising:
     name: "Advertising"
     type: "MUTE"
     duration: "14 days"
     reason: "Advertising"
-    command: "mute %player% %duration% %reason%"
+    command: "mute %player% 14d Advertising"
 
   voice:
     name: "Voice"
     type: "BAN"
     duration: "4 days"
     reason: "Voice violation"
-    command: "ban %player% %duration% %reason%"
+    command: "ban %player% 4d Voice violation"
 
   flooding:
     name: "Flooding"
     type: "IP-BAN"
     duration: "18 days"
     reason: "Flooding"
-    command: "banip %player% %reason%"
+    command: "banip %player% Flooding"
 
 revoke:
 
@@ -89,6 +89,8 @@ messages:
     player-not-online: "&cPlayer must be online."
 
     command-failed: "&cPunishment command failed."
+
+    players-only: "&cOnly players can use this command."
 
   muted: "&cYou are currently muted."
 
