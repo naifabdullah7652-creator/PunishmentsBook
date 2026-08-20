@@ -5,15 +5,19 @@ author: FlyNeXx
 description: Punishment management book for Minecraft 1.8.8
 
 commands:
+
   pm:
     description: Opens the punishment book
     usage: /pm <player>
     permission: punishmentsbook.use
 
-permissions:
-  punishmentsbook.use:
-    description: Allows the player to use PunishmentsBook
-    default: op
+  pmapply:
+    description: Executes a punishment
+    usage: /pmapply <player> <punishment>
+    permission: punishmentsbook.use
 
-depend:
-  - PunishmentJail
+permissions:
+
+  punishmentsbook.use:
+    description: Allows access to the punishment book
+    default: op
