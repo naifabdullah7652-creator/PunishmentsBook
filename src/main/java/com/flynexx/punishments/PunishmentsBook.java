@@ -1,8 +1,10 @@
 package com.flynexx.punishments;
 
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.server.v1_8_R3.EntityPlayer;
+import net.minecraft.server.v1_8_R3.ItemStack;
+import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import net.minecraft.server.v1_8_R3.NBTTagList;
+import net.minecraft.server.v1_8_R3.NBTTagString;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -10,10 +12,13 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PunishmentsBook extends JavaPlugin {
 
@@ -104,8 +109,7 @@ public class PunishmentsBook extends JavaPlugin {
                 return true;
             }
 
-            Player staff =
-                    (Player) sender;
+            Player staff = (Player) sender;
 
             if (args.length != 2) {
                 return true;
@@ -130,110 +134,42 @@ public class PunishmentsBook extends JavaPlugin {
     }
 
     /*
-     * Opens the book for the player.
+     * Creates and opens the interactive book.
      */
     private void openBook(
             Player player,
             String target) {
 
-        ItemStack book =
-                createBook(target);
-
-        ItemStack oldItem =
-                player.getItemInHand();
-
         try {
 
-            /*
-             * The 1.8.8 client opens the
-             * written book from the hand.
-             */
-            player.setItemInHand(book);
-            player.updateInventory();
+            ItemStack nmsBook =
+                    createNmsBook(target);
+
+            if (nmsBook == null) {
+
+                player.sendMessage(
+                        PREFIX +
+                        ChatColor.RED +
+                        "Could not create punishment book."
+                );
+
+                return;
+            }
 
             /*
              * Get NMS EntityPlayer.
              */
-            Object handle =
-                    player.getClass()
-                            .getMethod("getHandle")
-                            .invoke(player);
-
-            /*
-             * Convert Bukkit ItemStack
-             * to NMS ItemStack.
-             */
-            Class<?> craftItemStack =
-                    Class.forName(
-                            "org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack"
-                    );
-
-            Object nmsBook =
-                    craftItemStack
-                            .getMethod(
-                                    "asNMSCopy",
-                                    ItemStack.class
-                            )
-                            .invoke(
-                                    null,
-                                    book
-                            );
-
-            /*
-             * Find EntityPlayer.openBook(ItemStack).
-             */
-            java.lang.reflect.Method openBook =
-                    null;
-
-            for (java.lang.reflect.Method method :
-                    handle.getClass().getMethods()) {
-
-                if (!method.getName()
-                        .equals("openBook")) {
-
-                    continue;
-                }
-
-                Class<?>[] parameters =
-                        method.getParameterTypes();
-
-                if (parameters.length != 1) {
-                    continue;
-                }
-
-                openBook = method;
-                break;
-            }
-
-            if (openBook == null) {
-
-                throw new NoSuchMethodException(
-                        "EntityPlayer.openBook(ItemStack) not found"
-                );
-            }
+            EntityPlayer entityPlayer =
+                    ((CraftPlayer) player).getHandle();
 
             /*
              * Open the written book.
+             *
+             * This is the native 1.8.8 NMS method.
              */
-            openBook.invoke(
-                    handle,
-                    nmsBook
-            );
-
-            /*
-             * Restore the item that was
-             * previously in the player's hand.
-             */
-            player.setItemInHand(oldItem);
-            player.updateInventory();
+            entityPlayer.openBook(nmsBook);
 
         } catch (Throwable ex) {
-
-            /*
-             * Always restore the old item.
-             */
-            player.setItemInHand(oldItem);
-            player.updateInventory();
 
             getLogger().warning(
                     "Unable to open punishment book: " +
@@ -241,6 +177,8 @@ public class PunishmentsBook extends JavaPlugin {
                     ": " +
                     ex.getMessage()
             );
+
+            ex.printStackTrace();
 
             player.sendMessage(
                     PREFIX +
@@ -251,31 +189,56 @@ public class PunishmentsBook extends JavaPlugin {
     }
 
     /*
-     * Creates the interactive punishment book.
+     * Creates a 1.8.8 NMS written book.
      *
-     * IMPORTANT:
-     * Only the punishment NAME is shown.
-     *
-     * Duration is NOT displayed.
+     * The pages contain JSON with clickEvent.
      */
-    private ItemStack createBook(
+    private ItemStack createNmsBook(
             String target) {
 
-        ItemStack book =
-                new ItemStack(
+        /*
+         * Create Bukkit written book.
+         */
+        org.bukkit.inventory.ItemStack bukkitBook =
+                new org.bukkit.inventory.ItemStack(
                         Material.WRITTEN_BOOK
                 );
 
-        BookMeta meta =
-                (BookMeta) book.getItemMeta();
+        /*
+         * Convert to NMS.
+         */
+        ItemStack nmsBook =
+                CraftItemStack.asNMSCopy(
+                        bukkitBook
+                );
 
-        meta.setTitle(
+        /*
+         * Root NBT.
+         */
+        NBTTagCompound tag =
+                new NBTTagCompound();
+
+        /*
+         * Book title.
+         */
+        tag.setString(
+                "title",
                 "Punishments"
         );
 
-        meta.setAuthor(
+        /*
+         * Book author.
+         */
+        tag.setString(
+                "author",
                 "FlyNeXx"
         );
+
+        /*
+         * Pages list.
+         */
+        NBTTagList pages =
+                new NBTTagList();
 
         ConfigurationSection section =
                 getConfig()
@@ -286,98 +249,161 @@ public class PunishmentsBook extends JavaPlugin {
         /*
          * No punishments configured.
          */
-        if (section == null) {
+        if (section == null ||
+                section.getKeys(false).isEmpty()) {
 
-            meta.setPages(
-                    ChatColor.BLACK +
-                    "Punishments\n\n" +
-                    "No punishments configured."
+            String page =
+                    "{\"text\":\"Punishments\\n\\nNo punishments configured.\",\"color\":\"black\"}";
+
+            pages.add(
+                    new NBTTagString(page)
             );
 
-            book.setItemMeta(meta);
-
-            return book;
-        }
-
-        /*
-         * Create clickable components.
-         */
-        BaseComponent[] components =
-                new BaseComponent[
-                        section.getKeys(false).size()
-                ];
-
-        int index = 0;
-
-        for (String id :
-                section.getKeys(false)) {
+        } else {
 
             /*
-             * Punishment name.
+             * Keep punishments on pages.
              *
-             * NO duration here.
+             * We use several pages if needed.
              */
-            String name =
-                    getConfig().getString(
-                            "punishments." +
-                            id +
-                            ".name",
-                            id
+            List<String> ids =
+                    new ArrayList<String>(
+                            section.getKeys(false)
                     );
 
-            /*
-             * Text shown in the book.
-             */
-            TextComponent component =
-                    new TextComponent(
-                            ChatColor.BLACK +
-                            name +
-                            "\n"
-                    );
+            StringBuilder page =
+                    new StringBuilder();
 
-            /*
-             * Command executed when
-             * the player clicks the punishment.
-             */
-            String command =
-                    "/pmapply " +
-                    target +
-                    " " +
-                    id;
-
-            /*
-             * Add click action.
-             */
-            component.setClickEvent(
-                    new ClickEvent(
-                            ClickEvent.Action.RUN_COMMAND,
-                            command
-                    )
+            page.append(
+                    "{\"text\":\"Punishments\\n\\n\",\"color\":\"black\"}"
             );
 
-            components[index++] =
-                    component;
+            int lines = 0;
+
+            for (String id : ids) {
+
+                String name =
+                        getConfig().getString(
+                                "punishments." +
+                                id +
+                                ".name",
+                                id
+                        );
+
+                /*
+                 * Only the NAME is displayed.
+                 *
+                 * Duration is intentionally NOT
+                 * displayed in the book.
+                 */
+                String command =
+                        "/pmapply " +
+                        target +
+                        " " +
+                        id;
+
+                /*
+                 * Add clickable punishment.
+                 */
+                String json =
+                        "{\"text\":\"" +
+                        escapeJson(name) +
+                        "\",\"color\":\"black\"," +
+                        "\"clickEvent\":{\"action\":\"run_command\",\"value\":\"" +
+                        escapeJson(command) +
+                        "\"}}";
+
+                page.append(json);
+
+                page.append(
+                        "{\"text\":\"\\n\",\"color\":\"black\"}"
+                );
+
+                lines++;
+
+                /*
+                 * Minecraft 1.8 book pages are
+                 * small. Split after 10 punishments.
+                 */
+                if (lines >= 10) {
+
+                    pages.add(
+                            new NBTTagString(
+                                    page.toString()
+                            )
+                    );
+
+                    page =
+                            new StringBuilder();
+
+                    page.append(
+                            "{\"text\":\"Punishments\\n\\n\",\"color\":\"black\"}"
+                    );
+
+                    lines = 0;
+                }
+            }
+
+            /*
+             * Add remaining page.
+             */
+            if (lines > 0) {
+
+                pages.add(
+                        new NBTTagString(
+                                page.toString()
+                        )
+                );
+            }
         }
 
         /*
-         * Add the interactive page.
-         *
-         * This is the native Bungee/Spigot
-         * BookMeta API and avoids the
-         * reflection problem from the
-         * previous version.
+         * Add pages to NBT.
          */
-        meta.spigot().addPage(
-                components
+        tag.set(
+                "pages",
+                pages
         );
 
-        book.setItemMeta(meta);
+        /*
+         * Apply NBT to the book.
+         */
+        nmsBook.setTag(tag);
 
-        return book;
+        return nmsBook;
     }
 
     /*
-     * Executes the punishment command.
+     * Escapes text for Minecraft JSON.
+     */
+    private String escapeJson(
+            String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return text
+                .replace(
+                        "\\",
+                        "\\\\"
+                )
+                .replace(
+                        "\"",
+                        "\\\""
+                )
+                .replace(
+                        "\r",
+                        "\\r"
+                )
+                .replace(
+                        "\n",
+                        "\\n"
+                );
+    }
+
+    /*
+     * Executes the configured punishment.
      *
      * /pmapply <player> <id>
      */
@@ -417,9 +443,7 @@ public class PunishmentsBook extends JavaPlugin {
         /*
          * Duration.
          *
-         * This is NOT displayed in
-         * the book, but remains available
-         * to the punishment command.
+         * NOT displayed in the book.
          */
         String duration =
                 getConfig().getString(
@@ -437,7 +461,7 @@ public class PunishmentsBook extends JavaPlugin {
                 );
 
         /*
-         * Command configured for punishment.
+         * Command.
          */
         String command =
                 getConfig().getString(
@@ -481,7 +505,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * No command.
+         * No command configured.
          */
         if (command.trim().isEmpty()) {
 
@@ -495,8 +519,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * Execute punishment command
-         * as console.
+         * Execute as console.
          */
         boolean success =
                 Bukkit.dispatchCommand(
@@ -505,7 +528,7 @@ public class PunishmentsBook extends JavaPlugin {
                 );
 
         /*
-         * Command failed.
+         * Failed.
          */
         if (!success) {
 
@@ -519,7 +542,7 @@ public class PunishmentsBook extends JavaPlugin {
         }
 
         /*
-         * Success message.
+         * Success.
          */
         staff.sendMessage(
                 PREFIX +
