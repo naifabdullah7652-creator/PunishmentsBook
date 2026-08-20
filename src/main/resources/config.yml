@@ -1,0 +1,31 @@
+settings:
+  book-title: "&4Punishments"
+  book-author: "FlyNeXx"
+  player-line: "&7Player: &f%player%"
+
+punishments:
+
+  hacking:
+    name: "&cHacking"
+    duration: "3 days"
+    command: "punishmentjail jail %player% 3d"
+
+  advertising:
+    name: "&cAdvertising"
+    duration: "7 days"
+    command: "punishmentjail jail %player% 7d"
+
+  spam:
+    name: "&eSpamming"
+    duration: "3 hours"
+    command: "punishmentjail jail %player% 3h"
+
+  insulting:
+    name: "&eInsulting"
+    duration: "1 hour"
+    command: "punishmentjail jail %player% 1h"
+
+  bug-abuse:
+    name: "&cBug Abuse"
+    duration: "1 day"
+    command: "punishmentjail jail %player% 1d"
