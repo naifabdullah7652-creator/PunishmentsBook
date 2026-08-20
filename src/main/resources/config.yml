@@ -10,7 +10,8 @@ punishments:
     name: "Hacking"
     type: "JAIL"
     duration: "3 days"
-    reason: "Hacking"
+    reason: "Using Hacking"
+    command: "jail %player% 3 days"
 
   spamming:
     name: "Spamming"
