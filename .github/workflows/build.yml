@@ -21,29 +21,8 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Download BuildTools
-        run: |
-          mkdir -p buildtools
-          curl -L -o buildtools/BuildTools.jar \
-            https://hub.spigotmc.org/jenkins/job/BuildTools/8/artifact/target/BuildTools.jar
-
-      - name: Build Spigot 1.8.8
-        run: |
-          cd buildtools
-          java -jar BuildTools.jar --rev 1.8.8
-
-      - name: Install Spigot 1.8.8
-        run: |
-          mvn install:install-file \
-            -Dfile=buildtools/Spigot/Spigot-Server/target/spigot-1.8.8-R0.1-SNAPSHOT.jar \
-            -DgroupId=org.spigotmc \
-            -DartifactId=spigot \
-            -Dversion=1.8.8-R0.1-SNAPSHOT \
-            -Dpackaging=jar
-
-      - name: Build PunishmentsBook
-        run: |
-          mvn -B clean package -Dfile.encoding=UTF-8
+      - name: Build
+        run: mvn -B clean package -Dfile.encoding=UTF-8
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
