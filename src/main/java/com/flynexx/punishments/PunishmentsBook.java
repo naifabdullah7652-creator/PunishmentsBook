@@ -1,11 +1,14 @@
 package com.flynexx.punishments;
 
+import net.minecraft.server.v1_8_R3.EntityPlayer;
+import net.minecraft.server.v1_8_R3.PacketPlayOutSetSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -58,6 +61,11 @@ public class PunishmentsBook extends JavaPlugin {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
+        if (meta == null) {
+            player.sendMessage(ChatColor.RED + "Could not create punishment book.");
+            return;
+        }
+
         String title = getConfig().getString(
                 "settings.book-title",
                 "&4Punishments"
@@ -68,11 +76,14 @@ public class PunishmentsBook extends JavaPlugin {
                 "FlyNeXx"
         );
 
+        /*
+         * 1.8.8 supports BookMeta title/author,
+         * so do not use Player.openBook().
+         */
         meta.setTitle(color(title));
         meta.setAuthor(author);
 
         List<String> pages = new ArrayList<String>();
-
         StringBuilder page = new StringBuilder();
 
         page.append(color("&4&lPUNISHMENTS\n\n"));
@@ -111,6 +122,9 @@ public class PunishmentsBook extends JavaPlugin {
                         + color("&7Duration: &f" + duration)
                         + "\n\n";
 
+                /*
+                 * Minecraft book page limit.
+                 */
                 if (page.length() + line.length() > 220) {
                     pages.add(page.toString());
                     page = new StringBuilder();
@@ -129,25 +143,70 @@ public class PunishmentsBook extends JavaPlugin {
         meta.setPages(pages);
         book.setItemMeta(meta);
 
+        /*
+         * Save the player's current item.
+         */
         ItemStack oldItem = player.getItemInHand();
 
+        /*
+         * Put the book into the player's hand.
+         */
         player.setItemInHand(book);
         player.updateInventory();
 
-        player.openBook(book);
+        /*
+         * Open written book using NMS for 1.8.8.
+         */
+        openBookNMS(player);
 
+        /*
+         * Restore previous item after opening.
+         */
         Bukkit.getScheduler().runTaskLater(
                 this,
                 new Runnable() {
                     @Override
                     public void run() {
+
                         if (player.isOnline()) {
                             player.setItemInHand(oldItem);
                             player.updateInventory();
                         }
+
                     }
                 },
                 2L
+        );
+    }
+
+    private void openBookNMS(Player player) {
+
+        EntityPlayer entityPlayer =
+                ((CraftPlayer) player).getHandle();
+
+        int slot = player.getInventory().getHeldItemSlot();
+
+        entityPlayer.playerConnection.sendPacket(
+                new PacketPlayOutSetSlot(
+                        0,
+                        slot,
+                        entityPlayer.inventory.getItem(slot)
+                )
+        );
+
+        /*
+         * 1.8.8 has no Player.openBook().
+         *
+         * The client automatically opens a written book
+         * when the item is changed while using the proper
+         * NMS interaction flow.
+         */
+        entityPlayer.a(
+                entityPlayer.inventory.getItem(slot),
+                org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack
+                        .asNMSCopy(entityPlayer.inventory.getItem(slot)),
+                org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack
+                        .asNMSCopy(entityPlayer.inventory.getItem(slot))
         );
     }
 
