@@ -1,21 +1,56 @@
 name: Build PunishmentsBook
+
 on:
   push:
   workflow_dispatch:
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Java 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
-          cache: maven
-      - name: Build
-        run: mvn -B clean package -Dfile.encoding=UTF-8
+
+      - name: Download Spigot BuildTools
+        run: |
+          wget -O BuildTools.jar \
+            https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+
+      - name: Build Spigot 1.8.8
+        run: |
+          java -jar BuildTools.jar --rev 1.8.8
+
+      - name: Check Spigot
+        run: |
+          ls -lh
+          test -f spigot-1.8.8.jar
+
+      - name: Install Spigot 1.8.8 into Maven
+        run: |
+          mvn install:install-file \
+            -Dfile=spigot-1.8.8.jar \
+            -DgroupId=org.spigotmc \
+            -DartifactId=spigot \
+            -Dversion=1.8.8-R0.1-SNAPSHOT \
+            -Dpackaging=jar
+
+      - name: Build PunishmentsBook
+        run: |
+          mvn -B clean package -Dfile.encoding=UTF-8
+
+      - name: Check Plugin JAR
+        run: |
+          test -f target/PunishmentsBook-2.0.0.jar
+          ls -lh target/PunishmentsBook-2.0.0.jar
+
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
