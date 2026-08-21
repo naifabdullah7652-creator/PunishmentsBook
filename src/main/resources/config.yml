@@ -9,14 +9,15 @@ book:
 
 rank-priority:
   enabled: true
+
   groups:
-    - owner
-    - manager
-    - supervisor
-    - helper
-    - builder
-    - vip
-    - default
+    owner: 90
+    manager: 80
+    supervisor: 70
+    helper: 60
+    builder: 50
+    vip: 40
+    default: 10
 
   messages:
     higher-rank: "&cYou cannot punish a staff member with a higher rank!"
