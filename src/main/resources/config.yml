@@ -1,5 +1,5 @@
 settings:
-  prefix: "&cPunishments &7┃ "
+  prefix: "&cPunishments &8┃ "
 
 book:
   title: "Punishments"
@@ -7,6 +7,11 @@ book:
   color: "black"
   hover: "Click to apply punishment"
 
+# =========================================================
+# RANK PRIORITY
+# Higher number = Higher rank
+# Punishments are only allowed against LOWER ranked players
+# =========================================================
 rank-priority:
   enabled: true
 
@@ -23,6 +28,10 @@ rank-priority:
     higher-rank: "&cYou cannot punish a staff member with a higher rank!"
     same-rank: "&cYou cannot punish a staff member with the same rank!"
     unknown-rank: "&cCould not determine your rank or the target's rank."
+
+# =========================================================
+# PUNISHMENTS
+# =========================================================
 
 punishments:
 
@@ -69,7 +78,14 @@ punishments:
     duration: "18 days"
     reason: "Flooding"
 
+# =========================================================
+# REVOKE
+# =========================================================
+
 revoke:
+
+  # Console can always use /pmrevoke
+  console: true
 
   jail:
     enabled: true
@@ -89,6 +105,10 @@ revoke:
     no-punishment: "&cThis player has no active punishment."
     success: "&aPunishment &f%punishment% &afor &f%player% &ahas been revoked."
     target: "&aYour punishment has been revoked by &f%staff%&a."
+
+# =========================================================
+# MESSAGES
+# =========================================================
 
 messages:
 
