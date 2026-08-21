@@ -5,54 +5,55 @@ author: Flynexx
 
 commands:
   pm:
-    description: Open punishment book
+    description: Open the punishment book
     usage: /pm <player>
 
   pmapply:
-    description: Apply punishment
+    description: Apply a punishment
     usage: /pmapply <player> <punishment>
 
   pmrevoke:
-    description: Revoke punishment
+    description: Revoke a punishment
     usage: /pmrevoke <player>
 
 permissions:
 
   punishmentsbook.use:
-    description: Use the punishment book
+    description: Allows the player to use the punishment book
     default: op
 
   punishmentsbook.revoke:
-    description: Revoke punishments
+    description: Allows the player to revoke punishments
     default: op
 
-  # Rank priority permissions
-  # Higher number = higher rank
-
   punishmentsbook.rank.90:
-    description: Owner rank
+    description: Owner rank priority 90
     default: false
 
   punishmentsbook.rank.80:
-    description: Manager rank
+    description: Manager rank priority 80
     default: false
 
   punishmentsbook.rank.70:
-    description: Supervisor rank
+    description: Supervisor rank priority 70
     default: false
 
   punishmentsbook.rank.60:
-    description: Helper rank
+    description: Helper rank priority 60
     default: false
 
   punishmentsbook.rank.50:
-    description: Builder rank
+    description: Builder rank priority 50
     default: false
 
   punishmentsbook.rank.40:
-    description: VIP rank
+    description: VIP rank priority 40
     default: false
 
   punishmentsbook.rank.10:
-    description: Default rank
+    description: Default rank priority 10
+    default: false
+
+  punishmentsbook.rank.bypass:
+    description: Allows punishment regardless of target rank
     default: false
