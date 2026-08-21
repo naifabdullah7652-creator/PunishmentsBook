@@ -17,6 +17,7 @@ commands:
     usage: /pmrevoke <player>
 
 permissions:
+
   punishmentsbook.use:
     description: Use the punishment book
     default: op
@@ -24,3 +25,34 @@ permissions:
   punishmentsbook.revoke:
     description: Revoke punishments
     default: op
+
+  # Rank priority permissions
+  # Higher number = higher rank
+
+  punishmentsbook.rank.90:
+    description: Owner rank
+    default: false
+
+  punishmentsbook.rank.80:
+    description: Manager rank
+    default: false
+
+  punishmentsbook.rank.70:
+    description: Supervisor rank
+    default: false
+
+  punishmentsbook.rank.60:
+    description: Helper rank
+    default: false
+
+  punishmentsbook.rank.50:
+    description: Builder rank
+    default: false
+
+  punishmentsbook.rank.40:
+    description: VIP rank
+    default: false
+
+  punishmentsbook.rank.10:
+    description: Default rank
+    default: false
