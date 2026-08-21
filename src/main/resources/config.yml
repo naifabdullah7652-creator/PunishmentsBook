@@ -7,6 +7,22 @@ book:
   color: "black"
   hover: "Click to apply punishment"
 
+rank-priority:
+  enabled: true
+  groups:
+    - owner
+    - manager
+    - supervisor
+    - helper
+    - builder
+    - vip
+    - default
+
+  messages:
+    higher-rank: "&cYou cannot punish a staff member with a higher rank!"
+    same-rank: "&cYou cannot punish a staff member with the same rank!"
+    unknown-rank: "&cCould not determine your rank or the target's rank."
+
 punishments:
 
   hacking:
