@@ -240,7 +240,7 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
         if (section == null || section.getKeys(false).isEmpty()) {
             pages.add(new NBTTagString(
-                    "{\"text\":\"No punishments configured.\",\"color\":\"black\"}"
+                    "{\"text\":\"No punishments configured.\",\"color\":\"red\"}"
             ));
 
             tag.set("pages", pages);
@@ -251,15 +251,17 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         ArrayList<String> ids =
                 new ArrayList<String>(section.getKeys(false));
 
-        // الصفحة الأولى: العنوان وأول أربع عقوبات
-        StringBuilder page1 = new StringBuilder();
-
-        page1.append(
-                "{\"text\":\"Punishments\\n\\n\",\"color\":\"black\",\"extra\":["
+        String hover = getConfig().getString(
+                "book.hover",
+                "Click to apply punishment"
         );
 
-        // الصفحة الثانية: العقوبات من الخامسة وما بعدها
+        StringBuilder page1 = new StringBuilder();
         StringBuilder page2 = new StringBuilder();
+
+        page1.append(
+                "{\"text\":\"Punishments\\n\\n\",\"color\":\"dark_red\",\"bold\":true,\"extra\":["
+        );
 
         page2.append(
                 "{\"text\":\"\",\"color\":\"black\",\"extra\":["
@@ -276,32 +278,30 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
 
             String command = "/pmapply " + target + " " + id;
 
-            String hover = getConfig().getString(
-                    "book.hover",
-                    "Click to apply punishment"
-            );
-
             String entry =
                     "{\"text\":\"" + escapeJson((i + 1) + ". " + name) + "\"," +
-                    "\"color\":\"black\"," +
+                    "\"color\":\"blue\"," +
+                    "\"bold\":true," +
                     "\"underlined\":true," +
                     "\"clickEvent\":{\"action\":\"run_command\",\"value\":\"" +
                     escapeJson(command) + "\"}," +
                     "\"hoverEvent\":{\"action\":\"show_text\",\"value\":\"" +
                     escapeJson(hover) + "\"}}";
 
-            if (i > 0 && i < 4) {
-                page1.append(",{\"text\":\"\\n\"},");
-            }
+            if (i < 4) {
 
-            if (i == 0) {
-                page1.append(entry);
-            } else if (i < 4) {
-                page1.append(entry);
-            } else {
-                if (i > 4) {
-                    page2.append(",{\"text\":\"\\n\"},");
+                if (i > 0) {
+                    page1.append(",{\"text\":\"\\n\\n\"},");
                 }
+
+                page1.append(entry);
+
+            } else {
+
+                if (i > 4) {
+                    page2.append(",{\"text\":\"\\n\\n\"},");
+                }
+
                 page2.append(entry);
             }
         }
@@ -900,7 +900,6 @@ public class PunishmentsBook extends JavaPlugin implements Listener {
         dataConfig.set("punishments." + uuid.toString(), null);
     }
 
-    // حماية من NullPointerException عند الإيقاف
     private void savePunishments() {
 
         if (dataConfig == null || dataFile == null) {
